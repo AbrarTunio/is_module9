@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Database Security – Activity Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Sora:wght@500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* This page is intentionally always light (white and soft purple), even when the viewer or device prefers dark mode. */
+:root{
+  color-scheme:light;
+  --bg:#fcfaff; --surface:#ffffff; --surface-2:#f5f0fd; --border:#e7ddf7; --border-strong:#cdbcee; --text:#2e2148; --muted:#6a5c86;
+  --primary:#7b3fe4; --primary-dark:#5f2bc0; --primary-soft:#f0e8fe; --primary-ink:#ffffff; --accent:#c4a5f5;
+  --good:#1f7a52; --good-soft:#e5f6ee; --good-border:#9ad7ba; --bad:#b4231b; --bad-soft:#fdeeec; --bad-border:#f0b0aa;
+  --warn:#7a5607; --warn-soft:#fff6df; --warn-border:#efd99a; --topbar:rgba(255,255,255,.92);
+  --shadow:0 1px 2px rgba(46,33,72,.05),0 12px 28px rgba(123,63,228,.08); --btn-shadow:0 6px 16px rgba(123,63,228,.24); --code-bg:#f6f2fe;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:light;
+    --bg:#fcfaff; --surface:#ffffff; --surface-2:#f5f0fd; --border:#e7ddf7; --border-strong:#cdbcee; --text:#2e2148; --muted:#6a5c86;
+    --primary:#7b3fe4; --primary-dark:#5f2bc0; --primary-soft:#f0e8fe; --primary-ink:#ffffff; --accent:#c4a5f5;
+    --good:#1f7a52; --good-soft:#e5f6ee; --good-border:#9ad7ba; --bad:#b4231b; --bad-soft:#fdeeec; --bad-border:#f0b0aa;
+    --warn:#7a5607; --warn-soft:#fff6df; --warn-border:#efd99a; --topbar:rgba(255,255,255,.92);
+    --shadow:0 1px 2px rgba(46,33,72,.05),0 12px 28px rgba(123,63,228,.08); --btn-shadow:0 6px 16px rgba(123,63,228,.24); --code-bg:#f6f2fe;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:light;
+  --bg:#fcfaff; --surface:#ffffff; --surface-2:#f5f0fd; --border:#e7ddf7; --border-strong:#cdbcee; --text:#2e2148; --muted:#6a5c86;
+  --primary:#7b3fe4; --primary-dark:#5f2bc0; --primary-soft:#f0e8fe; --primary-ink:#ffffff; --accent:#c4a5f5;
+  --good:#1f7a52; --good-soft:#e5f6ee; --good-border:#9ad7ba; --bad:#b4231b; --bad-soft:#fdeeec; --bad-border:#f0b0aa;
+  --warn:#7a5607; --warn-soft:#fff6df; --warn-border:#efd99a; --topbar:rgba(255,255,255,.92);
+  --shadow:0 1px 2px rgba(46,33,72,.05),0 12px 28px rgba(123,63,228,.08); --btn-shadow:0 6px 16px rgba(123,63,228,.24); --code-bg:#f6f2fe;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 80px);background:#fcfaff}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);
+  background-image:radial-gradient(900px 420px at 0% -8%,var(--primary-soft),transparent 65%),radial-gradient(700px 360px at 100% 0%,var(--surface-2),transparent 60%);background-repeat:no-repeat;
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--topbar);backdrop-filter:blur(10px)}
+img,svg{max-width:100%}
+h1,h2,h3,h4{font-family:"Sora","Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.2;margin:0 0 .5em;letter-spacing:-.01em;color:var(--text);font-weight:700}
+h1{font-size:clamp(2rem,5.2vw,3.2rem)}
+h2{font-size:clamp(1.35rem,3.1vw,1.8rem)}
+h3{font-size:1.18rem}
+h4{font-size:1.02rem}
+p{margin:0 0 .8em}
+b,strong{font-weight:700}
+.mono,code{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{font-size:.86em;background:var(--code-bg);border:1px solid var(--border);padding:.05em .4em;border-radius:6px;word-break:break-word}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:8px}
+.wrap{max-width:920px;margin:0 auto;padding:26px 20px 70px}
+.small{font-size:.9rem}.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px}.row.wrap{flex-wrap:wrap}.between{justify-content:space-between}.end{justify-content:flex-end}.center{justify-content:center}
+.stack>*+*{margin-top:18px}
+
+/* Top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--topbar);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:920px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;cursor:pointer;color:var(--text);text-align:left}
+.brand:disabled{cursor:default}
+.brand-ic{width:36px;height:36px;border-radius:11px;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;font-size:18px;flex:none}
+.brand-t{font-family:"Sora",sans-serif;font-weight:700;font-size:1.02rem;line-height:1.1}
+.brand-t small{display:block;font-family:"Atkinson Hyperlegible",sans-serif;font-weight:400;font-size:.8rem;color:var(--muted)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tb-prog{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);font-weight:700}
+.tb-prog .progress{width:90px}
+.student{display:flex;align-items:center;gap:8px;font-size:.88rem;line-height:1.2}
+.student small{display:block;color:var(--muted)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--primary-soft);color:var(--primary-dark);display:grid;place-items:center;font-weight:700;border:1.5px solid var(--accent)}
+
+/* Basics */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:clamp(18px,3.6vw,32px)}
+.tag{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;font-weight:700;color:var(--primary-dark);background:var(--primary-soft);padding:5px 12px;border-radius:999px}
+.lead{font-size:1.12rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;font-weight:700;padding:4px 11px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--primary-dark)}
+.pill.warn{background:var(--warn-soft);border-color:var(--warn-border);color:var(--warn)}
+.progress{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+.progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--primary));border-radius:99px;transition:width .45s ease}
+.btn{appearance:none;border:0;border-radius:12px;padding:12px 20px;font-size:1rem;font-weight:700;cursor:pointer;background:var(--primary);color:var(--primary-ink);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s,background .2s;box-shadow:var(--btn-shadow)}
+.btn:hover{background:var(--primary-dark)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn-ghost{background:transparent;color:var(--primary-dark);border:1.5px solid var(--border-strong);box-shadow:none}
+.btn-ghost:hover{background:var(--primary-soft)}
+.btn-soft{background:var(--primary-soft);color:var(--primary-dark);box-shadow:none;border:1px solid var(--border)}
+.btn-soft:hover{background:var(--surface-2);border-color:var(--primary)}
+.btn-skip{background:var(--surface-2);color:var(--muted);box-shadow:none;border:1px solid var(--border)}
+.btn-skip:hover{background:var(--primary-soft);color:var(--primary-dark)}
+.btn-sm{padding:8px 14px;font-size:.92rem;border-radius:10px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700;font-size:.95rem}
+.input{font:inherit;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);outline:none;transition:border .2s,box-shadow .2s;width:100%}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft)}
+.err{color:var(--bad);font-size:.92rem;font-weight:700;min-height:1.3em;margin-top:6px}
+
+/* Welcome */
+.hero-grid{display:grid;grid-template-columns:1.2fr .95fr;gap:24px;align-items:center}
+.hero-facts{list-style:none;padding:0;margin:16px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hero-facts li{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:.95rem}
+.vault{background:linear-gradient(170deg,#4b2b86,#7b3fe4);border-radius:22px;padding:18px;color:#f3ecff;box-shadow:var(--shadow)}
+.vault-h{display:flex;align-items:center;justify-content:space-between;font-family:"Sora",sans-serif;font-weight:700}
+.vault-h .dot{width:12px;height:12px;border-radius:50%;background:#9ad7ba;box-shadow:0 0 0 4px rgba(154,215,186,.25)}
+.vrow{display:flex;justify-content:space-between;gap:10px;font-family:"JetBrains Mono",monospace;font-size:.84rem;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.08);margin-top:8px}
+.vrow .masked{color:#c4a5f5}
+.vault-tag{margin-top:12px;font-size:.84rem;color:#e6d8ff;display:flex;align-items:center;gap:6px}
+.who-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;align-items:end}
+
+/* Overview */
+.objectives{margin:0;padding-left:1.3em;display:grid;gap:6px}
+.objectives li::marker{color:var(--primary);font-weight:700}
+.journey{display:grid;gap:12px}
+.jcard{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;border:1.5px solid var(--border);border-radius:16px;padding:16px;background:var(--surface)}
+.jcard.locked{opacity:.65}
+.jcard.quiz{border-color:var(--accent);background:var(--surface-2)}
+.jnum{width:46px;height:46px;border-radius:14px;background:var(--primary-soft);color:var(--primary-dark);display:grid;place-items:center;font-family:"Sora",sans-serif;font-weight:700;font-size:1.25rem;border:1.5px solid var(--accent)}
+.jtitle{font-weight:700;font-size:1.05rem}
+.jmeta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.marks{width:100%;border-collapse:collapse;font-size:.96rem}
+.marks th,.marks td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.marks tr:last-child td,.marks tr:last-child th{border-bottom:0}
+.marks th{background:var(--surface-2);font-weight:700}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.howto div{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:12px}
+.howto .ic{font-size:1.5rem;display:block}
+
+/* Step */
+.crumbs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.95rem;margin-bottom:10px}
+.step-title{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sec-tag{display:inline-flex;align-items:center;gap:8px;font-family:"Sora",sans-serif;font-weight:700;font-size:1.04rem;margin-bottom:12px;color:var(--primary-dark)}
+.key{background:var(--primary-soft);border-left:5px solid var(--primary);padding:14px 16px;border-radius:12px;margin-top:14px}
+.analogy{background:var(--surface-2);border:1px dashed var(--border-strong);border-radius:12px;padding:12px 14px}
+.warnline{background:var(--warn-soft);border:1px solid var(--warn-border);border-radius:10px;padding:8px 12px;font-size:.92rem;margin-bottom:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.mini{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px}
+.mini-h{font-family:"Sora",sans-serif;font-weight:700;margin-bottom:4px;color:var(--primary-dark)}
+.activity{border:2px solid var(--accent);background:linear-gradient(180deg,var(--surface-2),var(--surface) 160px)}
+.act-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.done-badge{display:none;align-items:center;gap:6px;background:var(--good);color:#fff;font-weight:700;font-size:.88rem;padding:4px 12px;border-radius:999px}
+.activity.is-done .done-badge{display:inline-flex}
+.task-text{font-weight:700;font-size:1.02rem}
+.hint-area{margin-top:16px;border-top:1px dashed var(--border-strong);padding-top:14px}
+.hint-btn{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn-border);box-shadow:none}
+.hint-btn:hover{background:var(--warn-soft);border-color:var(--warn)}
+.hintbox{background:var(--warn-soft);border:1px solid var(--warn-border);padding:10px 14px;border-radius:12px;margin-top:10px;animation:pop .25s}
+.feedback{padding:12px 14px;border-radius:12px;margin-top:12px;border-left:5px solid var(--border-strong);background:var(--surface-2);animation:pop .25s}
+.feedback.good{background:var(--good-soft);border-left-color:var(--good)}
+.feedback.bad{background:var(--bad-soft);border-left-color:var(--bad)}
+.fb-actions{margin-top:10px}
+.stepnav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.dots{display:flex;gap:6px;align-items:center}
+.dots i{width:10px;height:10px;border-radius:99px;background:var(--border-strong);transition:.3s}
+.dots i.ok{background:var(--accent)}
+.dots i.on{width:28px;background:var(--primary)}
+.part{margin:20px 0 8px;color:var(--primary-dark)}
+.part:first-child{margin-top:0}
+.flowline{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:12px 0}
+.flowline .fbox{flex:1 1 130px;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:10px 12px;text-align:center}
+.flowline .fbox b{display:block;font-family:"Sora",sans-serif}
+.flowline .fbox.hi{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.flowline .arr{align-self:center;color:var(--primary);font-weight:700}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:10px}
+.role{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:.93rem}
+.role b{display:block;color:var(--primary-dark)}
+
+/* Choice quiz */
+.cq-top{display:flex;align-items:center;gap:12px}
+.cq-bar{flex:1;height:6px;background:var(--border);border-radius:99px;overflow:hidden}
+.cq-bar i{display:block;height:100%;background:var(--primary);transition:width .3s}
+.cq-q{font-size:1.06rem;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:12px}
+.opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.opt{font-size:1rem;font-weight:700;padding:12px 16px;border-radius:12px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s;text-align:left;line-height:1.35}
+.opt:hover:not(:disabled){border-color:var(--primary);background:var(--primary-soft)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+
+/* Flip */
+.flips{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.flip{perspective:900px;height:244px;cursor:pointer;border:0;background:none;padding:0;color:inherit;text-align:left}
+.flip-in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flip.on .flip-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:16px;padding:16px;border:2px solid var(--border-strong);display:flex;flex-direction:column}
+.front{background:var(--surface);align-items:center;justify-content:center;text-align:center;gap:4px}
+.flip:hover .front{border-color:var(--primary)}
+.back{background:var(--primary-soft);border-color:var(--accent);transform:rotateY(180deg);font-size:.9rem;overflow:auto;gap:6px}
+.big-emoji{font-size:42px;line-height:1.1}
+.f-big{font-family:"Sora",sans-serif;font-weight:700;font-size:1.25rem;color:var(--primary-dark)}
+.f-type{font-weight:700;color:var(--primary-dark)}
+.weak{margin-top:auto;background:var(--surface);border-radius:10px;padding:6px 8px;font-size:.84rem}
+
+/* Sort */
+.sub{font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.pool{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;padding:12px;border-radius:14px;background:var(--surface);border:1.5px dashed var(--border-strong)}
+.chip{font-size:.95rem;font-weight:700;padding:8px 14px;border-radius:999px;border:1.5px solid var(--border-strong);background:var(--surface-2);color:var(--text);cursor:pointer;transition:transform .15s,background .15s;text-align:left}
+.chip:hover{border-color:var(--primary)}
+.chip.sel{background:var(--primary);color:var(--primary-ink);border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--btn-shadow)}
+.buckets{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
+.bucket{text-align:left;cursor:pointer;border-radius:14px;border:2px solid var(--border-strong);background:var(--surface);padding:12px;min-height:130px;color:var(--text);display:flex;flex-direction:column;gap:6px;transition:border-color .15s,background .15s}
+.bucket:hover{border-color:var(--primary);background:var(--surface-2)}
+.bh{font-family:"Sora",sans-serif;font-weight:700;font-size:1rem}
+.placedlist{display:flex;flex-wrap:wrap;gap:5px}
+.placed{font-size:.82rem;background:var(--good-soft);border:1px solid var(--good-border);border-radius:8px;padding:2px 8px;color:var(--good);font-weight:700}
+
+/* Ordering */
+.order-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.events{display:grid;gap:8px}
+.event{width:100%;font-weight:400}
+.timeline{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.tl-empty{border:1.5px dashed var(--border-strong);border-radius:12px;padding:14px;color:var(--muted);text-align:center}
+.tl-item{display:flex;gap:12px;align-items:flex-start;background:var(--good-soft);border:1px solid var(--good-border);border-radius:12px;padding:10px 12px;animation:pop .3s}
+.tl-num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;font-weight:700}
+.tl-phase{font-size:.84rem;font-weight:700;color:var(--primary-dark)}
+
+/* Tasks / meter */
+.tasks{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.task{display:flex;gap:10px;align-items:center;font-weight:700;color:var(--muted)}
+.tick{width:24px;height:24px;border-radius:50%;border:2px solid var(--border-strong);display:grid;place-items:center;font-size:.8rem;flex:none;color:transparent;transition:.25s}
+.task.ok{color:var(--good)}
+.task.ok .tick{background:var(--good);border-color:var(--good);color:#fff}
+
+/* SQL console */
+.form-mock{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px}
+.form-mock label{font-weight:700;font-size:.9rem;display:block;margin-bottom:4px}
+.sqlbox{background:#2a1c47;color:#ede6ff;border-radius:12px;padding:12px 14px;font-family:"JetBrains Mono",monospace;font-size:.86rem;line-height:1.55;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.sqlbox .kw{color:#c9a9ff;font-weight:700}
+.sqlbox .inj{background:#7b2440;color:#ffd7e3;border-radius:4px;padding:0 3px}
+.sqlbox .str{color:#9fe6c4}
+.sqlbox .com{color:#8a7bb0;font-style:italic}
+.resultgrid{display:grid;gap:10px;margin-top:10px}
+.dbtable{width:100%;border-collapse:collapse;font-size:.86rem}
+.dbtable th,.dbtable td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.dbtable th{background:var(--surface-2);font-weight:700}
+.dbtable tr.leak td{background:var(--bad-soft)}
+.payload-list{display:flex;flex-direction:column;gap:8px}
+.payload{text-align:left;cursor:pointer;border-radius:12px;border:1.5px solid var(--border-strong);background:var(--surface);padding:10px 14px;color:var(--text)}
+.payload:hover{border-color:var(--primary);background:var(--primary-soft)}
+.payload code{background:var(--code-bg)}
+.payload.on{border-color:var(--primary);background:var(--primary-soft)}
+.verdict{display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:4px 12px;border-radius:999px;margin-top:4px}
+.verdict.bad{background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad-border)}
+.verdict.ok{background:var(--good-soft);color:var(--good);border:1px solid var(--good-border)}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{font-size:.92rem;font-weight:700;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--primary-dark);box-shadow:var(--shadow)}
+
+/* Masking / views table */
+.viewtable{width:100%;border-collapse:collapse;font-size:.88rem}
+.viewtable th,.viewtable td{padding:8px 11px;border:1px solid var(--border);text-align:left;white-space:nowrap}
+.viewtable th{background:var(--surface-2);font-weight:700}
+td.hidden-col{background:repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 6px,#ece3fb 6px,#ece3fb 12px);color:var(--muted);text-align:center}
+td.masked{color:var(--muted);font-family:"JetBrains Mono",monospace}
+.coltoggles{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.ctog{font-size:.9rem;font-weight:700;padding:7px 12px;border-radius:999px;border:1.5px solid var(--border-strong);background:var(--surface);cursor:pointer;color:var(--text)}
+.ctog[aria-pressed="true"]{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+
+/* Encryption demo */
+.enc-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
+.enc-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:12px;text-align:center}
+.enc-card .lab{font-size:.84rem;color:var(--muted);font-weight:700}
+.enc-card .val{font-family:"JetBrains Mono",monospace;font-size:.9rem;word-break:break-all;margin-top:6px;min-height:40px}
+.enc-mid{text-align:center;color:var(--primary);font-weight:700}
+.lock-ic{font-size:30px}
+
+/* Done / quiz / result (shared) */
+.done-card{text-align:center}
+.medal{font-size:64px;line-height:1}
+.takeaways{text-align:left;background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:16px 20px;margin:18px auto;max-width:640px}
+.takeaways ul{margin:0;padding-left:1.2em;display:grid;gap:6px}
+.qprompt{font-size:1.22rem;margin:14px 0}
+.qopts{display:flex;flex-direction:column;gap:10px}
+.qopt{display:flex;gap:12px;align-items:center;text-align:left;font-size:1rem;padding:12px 14px;border-radius:14px;border:1.5px solid var(--border-strong);background:var(--surface);color:var(--text);cursor:pointer;transition:background .15s,border-color .15s}
+.qopt:hover:not(:disabled){border-color:var(--primary);background:var(--surface-2)}
+.qopt:disabled{cursor:default}
+.letter{width:32px;height:32px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;font-weight:700;flex:none;border:1px solid var(--border)}
+.qopt.sel{border-color:var(--primary);background:var(--primary-soft)}
+.qopt.sel .letter{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.qopt.right{border-color:var(--good);background:var(--good-soft)}
+.qopt.right .letter{background:var(--good);color:#fff}
+.qopt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.qopt.wrong .letter{background:var(--bad);color:#fff}
+.cert{border:2px solid var(--accent)}
+.result-grid{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-top:12px}
+.ring{width:170px;height:170px;border-radius:50%;background:conic-gradient(var(--primary) calc(var(--p) * 1%),var(--surface-2) 0);display:grid;place-items:center;border:1px solid var(--border)}
+.ring>div{width:132px;height:132px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center;line-height:1}
+.ring b{font-family:"Sora",sans-serif;font-size:2.7rem;color:var(--primary-dark)}
+.ring span{display:block;color:var(--muted);font-size:1rem;margin-top:4px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kv div{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px 12px}
+.kv small{display:block;color:var(--muted);font-size:.84rem}
+.kv b{font-size:1.02rem;word-break:break-word}
+.status-pass{color:var(--good)}.status-fail{color:var(--bad)}
+.review{margin:0;padding-left:1.3em;display:grid;gap:12px}
+.review li{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.review .yes{color:var(--good);font-weight:700}.review .no{color:var(--bad);font-weight:700}
+textarea.copybox{width:100%;min-height:150px;font-family:"JetBrains Mono",monospace;font-size:.85rem;border-radius:12px;border:1.5px solid var(--border-strong);padding:10px;background:var(--surface);color:var(--text);margin-top:10px}
+.foot{text-align:center;color:var(--muted);font-size:.86rem;padding:0 20px 30px}
+
+@keyframes pop{from{transform:scale(.98);opacity:0}to{transform:none;opacity:1}}
+@keyframes slide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.shake{animation:shake .4s}
+.screen{animation:slide .35s ease}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.confetti i{position:absolute;top:-14px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(106vh) rotate(720deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+@media (max-width:760px){
+  .hero-grid,.who-grid,.order-grid,.two-col,.result-grid,.enc-grid{grid-template-columns:1fr}
+  .hero-facts{grid-template-columns:1fr}
+  .jcard{grid-template-columns:auto 1fr}
+  .jcard .btn{grid-column:1/-1}
+  .ring{margin:0 auto}
+  .tb-prog{display:none}
+  .enc-mid{transform:rotate(90deg)}
+}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+<main id="app" class="wrap"></main>
+<footer class="foot">A safe, simulated lab: nothing here touches a real database. Progress is saved in this browser only. On a shared computer, choose “I’m a different student” before starting.</footer>
+
+<script>
+(function(){
+"use strict";
+const rootEl = document.documentElement;
+function forceLight(){ if(rootEl.getAttribute("data-theme") !== "light") rootEl.setAttribute("data-theme","light"); }
+forceLight();
+try{ new MutationObserver(forceLight).observe(rootEl, {attributes:true, attributeFilter:["data-theme"]}); }catch(e){}
+
+const KEY = "db-activity-lab-v1";
+const TOTAL = 15;
+const app = document.getElementById("app");
+const topbar = document.getElementById("topbar");
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function fresh(){ return { name:"", roll:"", maxPos:-1, done:{}, results:[] }; }
+let S = fresh();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ const v = localStorage.getItem(KEY); if(v){ const o = JSON.parse(v); if(o && typeof o === "object") S = Object.assign(fresh(), o); } }catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+function el(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function doneCount(){ return Object.keys(S.done).filter(k => S.done[k]).length; }
+let mode = "welcome";
+
+function confetti(){
+  if(reduceMotion) return;
+  const cols = ["#7b3fe4","#c4a5f5","#f0c674","#9ad7ba","#e48ac4"];
+  const box = document.createElement("div"); box.className = "confetti";
+  for(let i=0;i<70;i++){ const p = document.createElement("i"); p.style.left = (Math.random()*100)+"vw"; p.style.background = cols[i%cols.length]; p.style.animationDelay = (Math.random()*.7)+"s"; p.style.animationDuration = (2+Math.random()*1.6)+"s"; box.appendChild(p); }
+  document.body.appendChild(box); setTimeout(() => box.remove(), 4500);
+}
+
+/* ---------- Generic builders ---------- */
+function choiceQuiz(root, cfg){
+  const items = cfg.items; let i = 0, first = 0, missed = false;
+  const wrap = document.createElement("div"); root.appendChild(wrap);
+  function show(){
+    if(i >= items.length){
+      wrap.innerHTML = `<div class="feedback good">🎉 All ${items.length} done! Correct on the first try: <b>${first} of ${items.length}</b></div>`;
+      if(cfg.onDone) cfg.onDone(); return;
+    }
+    const it = items[i]; missed = false;
+    let opts = (it.opts || cfg.options).slice(); if(cfg.shuffle) opts = shuffle(opts);
+    wrap.innerHTML = `<div class="cq-top"><span class="pill">${i+1} of ${items.length}</span><span class="cq-bar"><i style="width:${i/items.length*100}%"></i></span></div>
+      <div class="cq-q">${it.q}</div>
+      <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${o}</button>`).join("")}</div>
+      <div class="cq-fb" aria-live="polite"></div>`;
+    const fb = wrap.querySelector(".cq-fb");
+    wrap.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+      const o = opts[+b.dataset.k];
+      if(o === it.a){
+        if(!missed) first++;
+        wrap.querySelectorAll(".opt").forEach(x => x.disabled = true);
+        b.classList.add("right");
+        fb.innerHTML = `<div class="feedback good"><b>Correct!</b> ${it.why}<div class="fb-actions"><button class="btn btn-sm">${i+1 < items.length ? "Next one" : "Finish"}</button></div></div>`;
+        fb.querySelector("button").addEventListener("click", () => { i++; show(); });
+      } else {
+        missed = true; b.classList.add("wrong"); b.disabled = true; shake(b);
+        fb.innerHTML = `<div class="feedback bad"><b>Not quite.</b> ${it.hint || cfg.hint || "Read it again and try another option."}</div>`;
+      }
+    }));
+  }
+  show();
+}
+
+function sortGame(root, cfg, onDone){
+  const items = shuffle(cfg.items); let sel = null, placed = 0, first = 0; const missed = new Set();
+  root.innerHTML = `<div class="sub">Items to sort <span class="pill" data-left>${items.length} left</span></div>
+    <div class="pool" data-pool></div>
+    <div class="buckets">${cfg.buckets.map(b=>`<button class="bucket" data-f="${b.id}"><span class="bh">${b.e} ${b.label}</span><span class="small muted">${b.sub}</span><div class="placedlist"></div></button>`).join("")}</div>
+    <div data-fb aria-live="polite"></div>`;
+  const pool = root.querySelector("[data-pool]"), fb = root.querySelector("[data-fb]"), left = root.querySelector("[data-left]");
+  const nameOf = id => cfg.buckets.find(b=>b.id===id).label;
+  items.forEach(it => {
+    const c = el(`<button class="chip">${it.t}</button>`); c._it = it;
+    c.addEventListener("click", () => { pool.querySelectorAll(".chip").forEach(x => x.classList.remove("sel")); c.classList.add("sel"); sel = c; fb.innerHTML = `<div class="feedback">Selected <b>${it.t}</b>. Now tap the box it belongs to.</div>`; });
+    pool.appendChild(c);
+  });
+  root.querySelectorAll(".bucket").forEach(b => b.addEventListener("click", () => {
+    if(!sel){ shake(b); fb.innerHTML = `<div class="feedback">First tap an item in the dashed box, then tap a box.</div>`; return; }
+    const it = sel._it;
+    if(it.f === b.dataset.f){
+      if(!missed.has(it.t)) first++;
+      b.querySelector(".placedlist").appendChild(el(`<span class="placed">${it.t}</span>`));
+      sel.remove(); sel = null; placed++; left.textContent = (items.length-placed) + " left";
+      if(placed === items.length){ pool.innerHTML = `<span class="muted">All sorted!</span>`; fb.innerHTML = `<div class="feedback good">🎉 All ${items.length} sorted! Correct on the first try: <b>${first} of ${items.length}</b>.</div>`; onDone(); }
+      else fb.innerHTML = `<div class="feedback good">✓ <b>${it.t}</b> belongs in <b>${nameOf(it.f)}</b>.${it.why ? " " + it.why : ""}</div>`;
+    } else { missed.add(it.t); shake(b); fb.innerHTML = `<div class="feedback bad">Not “${nameOf(b.dataset.f)}”. Hint: ${cfg.tips[it.f]}</div>`; }
+  }));
+}
+
+function orderGame(root, events, doneMsg, onDone){
+  let next = 0; const order = shuffle(events.map((e,i)=>i));
+  root.innerHTML = `<div class="order-grid">
+    <div><div class="sub">Steps (shuffled)</div><div class="events" data-evs></div></div>
+    <div><div class="sub">Correct order</div><ol class="timeline" data-tl><li class="tl-empty">Click the step that happens first</li></ol></div>
+  </div><div data-fb aria-live="polite"></div>`;
+  const evs = root.querySelector("[data-evs]"), tl = root.querySelector("[data-tl]"), fb = root.querySelector("[data-fb]");
+  order.forEach(i => {
+    const b = el(`<button class="opt event">${events[i].t}</button>`);
+    b.addEventListener("click", () => {
+      if(i === next){
+        b.remove(); if(next === 0) tl.innerHTML = "";
+        tl.appendChild(el(`<li class="tl-item"><span class="tl-num">${next+1}</span><div><div class="tl-phase">${events[i].phase}</div>${events[i].t}</div></li>`));
+        next++;
+        if(next === events.length){ fb.innerHTML = `<div class="feedback good">${doneMsg}</div>`; onDone(); }
+        else fb.innerHTML = `<div class="feedback good">✓ Correct. What comes next?</div>`;
+      } else { shake(b); fb.innerHTML = `<div class="feedback bad">Not yet. Hint: ${events[next].clue}</div>`; }
+    });
+    evs.appendChild(b);
+  });
+}
+
+function flipGame(root, cards, doneMsg, onDone){
+  const seen = new Set();
+  root.innerHTML = `<div class="flips">${cards.map((f,i)=>`
+    <button class="flip" data-i="${i}" aria-label="Flip the card: ${f.name}">
+      <div class="flip-in">
+        <div class="face front"><div class="big-emoji">${f.e}</div><div class="f-big">${f.k}</div><div class="muted small">${f.name}</div><div class="small muted">Tap to flip</div></div>
+        <div class="face back"><span class="f-type">${f.e} ${f.name}</span>${f.back}</div>
+      </div></button>`).join("")}</div><div data-fb aria-live="polite"></div>`;
+  const fb = root.querySelector("[data-fb]");
+  root.querySelectorAll(".flip").forEach(b => b.addEventListener("click", () => {
+    b.classList.toggle("on"); seen.add(b.dataset.i);
+    if(seen.size === cards.length){ if(!root._fd){ root._fd = true; fb.innerHTML = `<div class="feedback good">${doneMsg}</div>`; onDone(); } }
+    else fb.innerHTML = `<div class="feedback">${seen.size} of ${cards.length} cards flipped.</div>`;
+  }));
+}
+
+/* ---------- Lesson 1 activities ---------- */
+function act_whyTarget(root, api){
+  const Y = "📈 Raises the value", N = "🛡️ Lowers the risk";
+  choiceQuiz(root, {
+    options:[Y, N],
+    hint:"Does this make the database a juicier target and bigger loss, or does it reduce the danger?",
+    items:[
+      {q:"A single database holds the personal data of 2 million customers.", a:Y, why:"Aggregation: one break-in exposes millions of records at once."},
+      {q:"The database stores names, CNICs, phone numbers and card details together.", a:Y, why:"Sensitive, linkable data is exactly what attackers and identity thieves want."},
+      {q:"The company encrypts the data and keeps strict access control.", a:N, why:"Protective measures reduce how much an attacker gains."},
+      {q:"The database is shared by a website, a mobile app and reporting tools.", a:Y, why:"Many connected applications mean a bigger attack surface: more doors to try."},
+      {q:"The data must stay available 24/7 for online banking.", a:Y, why:"High availability needs mean downtime or tampering causes serious harm."},
+      {q:"Admins keep the database software patched and up to date.", a:N, why:"Patching closes known vulnerabilities before attackers can use them."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function act_cia(root, api){
+  const C = "Confidentiality", I = "Integrity", A = "Availability";
+  choiceQuiz(root, {
+    options:[C, I, A],
+    hint:"Confidentiality = kept secret. Integrity = correct and unaltered. Availability = reachable when needed.",
+    items:[
+      {q:"An attacker downloads and sells the table of students’ CNIC numbers.", a:C, why:"Secret data was exposed to the wrong people."},
+      {q:"A hacker secretly changes a student’s grade from F to A.", a:I, why:"The data is no longer correct or trustworthy."},
+      {q:"Ransomware locks the hospital database and no doctor can read patient records.", a:A, why:"The data is unreachable exactly when it’s needed."},
+      {q:"A bank balance is altered to add two extra zeros.", a:I, why:"The value has been tampered with."},
+      {q:"A leaked report reveals every customer’s salary.", a:C, why:"Private information was disclosed."},
+      {q:"A flood of fake traffic crashes the exam results server on results day.", a:A, why:"Legitimate users can’t reach the system."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function act_dbComponents(root, api){
+  const cards = [
+    {e:"🗄️", k:"DBMS", name:"Database Management System", back:`<span>The software (such as MySQL, Oracle or SQL Server) that stores data and runs every query.</span><div class="weak">🎯 A bug or misconfiguration here can expose everything.</div>`},
+    {e:"🧾", k:"Query Language", name:"SQL", back:`<span>The language apps use to ask the database for data: SELECT, INSERT, UPDATE, DELETE.</span><div class="weak">🎯 If user input is mixed into SQL carelessly, injection becomes possible.</div>`},
+    {e:"📊", k:"Records", name:"Tables, rows and columns", back:`<span>Data is stored in tables. Each row is a record; each column is a field such as name or email.</span><div class="weak">🎯 The crown jewels: this is what attackers want to steal or change.</div>`},
+    {e:"🔌", k:"Apps", name:"Connected applications", back:`<span>Websites, mobile apps and reports all talk to the same database over the network.</span><div class="weak">🎯 Each connection is another door that must be secured.</div>`}
+  ];
+  flipGame(root, cards, "🎉 You’ve met the four pieces. Most database attacks aim at the data in the tables, usually by abusing SQL through a connected app.", api.complete);
+}
+
+function act_dbThreats(root, api){
+  sortGame(root, {
+    buckets:[
+      {id:"c", e:"🙈", label:"Confidentiality threat", sub:"data seen by the wrong people"},
+      {id:"i", e:"✏️", label:"Integrity threat", sub:"data wrongly changed"},
+      {id:"a", e:"🚫", label:"Availability threat", sub:"data not reachable"}
+    ],
+    tips:{ c:"This is about secret data being seen or stolen.", i:"This is about data being altered, corrupted or faked.", a:"This is about the database going down or being unreachable." },
+    items:[
+      {t:"Stolen database backup sold online", f:"c"}, {t:"Employee snooping on celebrity medical records", f:"c"}, {t:"Query leaks other users’ data", f:"c"}, {t:"SQL injection reading the whole user table", f:"c"},
+      {t:"Attacker edits invoice amounts", f:"i"}, {t:"Malware corrupts stored records", f:"i"}, {t:"Unauthorized update to exam marks", f:"i"},
+      {t:"Ransomware encrypts the database", f:"a"}, {t:"Server hardware failure with no backup", f:"a"}, {t:"Denial-of-service flood on results day", f:"a"}
+    ]
+  }, api.complete);
+}
+
+function act_dbaRoles(root, api){
+  const DBA = "Database administrator (DBA)", SEC = "Security / data owner", USR = "Application / end user";
+  choiceQuiz(root, {
+    options:[DBA, SEC, USR],
+    hint:"Who keeps the database running? Who decides the rules and who may see what? Who just uses the app?",
+    items:[
+      {q:"Installs and patches the DBMS, takes backups and tunes performance.", a:DBA, why:"Day-to-day care of the database is the DBA’s job."},
+      {q:"Decides which staff may view salary data and signs off the access policy.", a:SEC, why:"Choosing who may see what is the data owner’s responsibility."},
+      {q:"Logs in to the portal to check their own exam results.", a:USR, why:"End users interact only through the application, with limited rights."},
+      {q:"Sets up roles and grants privileges inside the database on the owner’s instructions.", a:DBA, why:"The DBA implements access control technically, following the owner’s decisions."},
+      {q:"Classifies which tables are confidential and must be encrypted.", a:SEC, why:"Data classification is a governance decision made by the owner."},
+      {q:"A reporting app runs read-only queries with a limited account.", a:USR, why:"Applications are users of the database too, and should get only the rights they need."}
+    ],
+    onDone: api.complete
+  });
+}
+
+/* ---------- Lesson 2: SQL injection ---------- */
+const USERS = [
+  {id:1, user:"hiba", pass:"••••••", email:"hiba@uni.pk", role:"student"},
+  {id:2, user:"umair", pass:"••••••", email:"umair@uni.pk", role:"student"},
+  {id:3, user:"drnoor", pass:"••••••", email:"noor@uni.pk", role:"teacher"},
+  {id:4, user:"admin", pass:"••••••", email:"admin@uni.pk", role:"admin"}
+];
+function kwHtml(s){
+  return esc(s)
+    .replace(/\b(SELECT|FROM|WHERE|AND|OR|INSERT|UPDATE|DELETE|DROP|TABLE|UNION|LIKE|LIMIT)\b/g, '<span class="kw">$1</span>')
+    .replace(/(--[^\n]*)/g, '<span class="com">$1</span>');
+}
+function act_injectLogin(root, api){
+  const PAYLOADS = [
+    {label:"A normal user types their real name", val:"hiba", kind:"normal"},
+    {label:"Bypass the password with a tautology", val:"hiba' OR '1'='1", kind:"bypass"},
+    {label:"Log in as the first user and comment out the rest", val:"admin' --", kind:"admin"},
+    {label:"A harmless name that contains an apostrophe", val:"O'Brien", kind:"error"}
+  ];
+  let fired = new Set(), bypassSeen = false;
+  root.innerHTML = `<div class="warnline">⚠️ Safe simulation only. Never run attacks against real systems; doing so is illegal.</div>
+    <div class="form-mock"><label>🔐 Vulnerable login form — username</label>
+      <input class="input mono" id="uin" placeholder="pick a payload below" readonly>
+      <p class="small muted" style="margin:8px 0 0">The app builds its query by pasting your input straight into the SQL:</p>
+    </div>
+    <div class="sqlbox" id="sql" style="margin-top:10px"></div>
+    <div class="sub" style="margin-top:14px">Try each input:</div>
+    <div class="payload-list" id="pl"></div>
+    <div class="resultgrid" id="res" aria-live="polite"></div>
+    <div class="tasks">
+      <div class="task" id="t1"><span class="tick">✓</span>See a normal, safe login</div>
+      <div class="task" id="t2"><span class="tick">✓</span>Break in with an injection payload</div>
+    </div>`;
+  const uin = root.querySelector("#uin"), sqlEl = root.querySelector("#sql"), res = root.querySelector("#res");
+  function render(val, kind){
+    uin.value = val;
+    const inj = `<span class="inj">${esc(val)}</span>`;
+    sqlEl.innerHTML = `<span class="kw">SELECT</span> * <span class="kw">FROM</span> users\n<span class="kw">WHERE</span> username = '${inj}' <span class="kw">AND</span> password = '<span class="str">...</span>';`;
+    let rows = [], note = "", cls = "bad";
+    if(kind === "normal"){ rows = USERS.filter(u => u.user === val); note = `✅ Safe: the quotes contained the input, so it matched one real row.`; cls = "ok"; fired.add("normal"); root.querySelector("#t1").classList.add("ok"); }
+    else if(kind === "bypass"){ rows = USERS; note = `💥 Injection! <code>OR '1'='1'</code> is always true, so the WHERE clause matches <b>every</b> row. The attacker is logged in without a password.`; bypassSeen = true; }
+    else if(kind === "admin"){ rows = USERS.filter(u => u.user === "admin"); note = `💥 Injection! The <code>--</code> comments out the password check, logging the attacker in as <b>admin</b>.`; bypassSeen = true; }
+    else if(kind === "error"){ rows = []; note = `⚠️ The stray apostrophe in <code>O'Brien</code> breaks the SQL and throws an error. A real name just crashed the query, which shows the input isn’t being handled safely.`; }
+    res.innerHTML = `<div class="verdict ${cls}">${kind==="normal"?"Query returned 1 row":kind==="error"?"SQL syntax error":"Query returned "+rows.length+" rows"}</div>` +
+      (rows.length ? `<div class="tablewrap"><table class="dbtable"><thead><tr><th>id</th><th>username</th><th>email</th><th>role</th></tr></thead><tbody>${rows.map(u=>`<tr class="${kind!=="normal"?"leak":""}"><td>${u.id}</td><td>${u.user}</td><td>${u.email}</td><td>${u.role}</td></tr>`).join("")}</tbody></table></div>` : "")
+      + `<div class="feedback ${cls==="ok"?"good":"bad"}">${note}</div>`;
+    if(bypassSeen){ root.querySelector("#t2").classList.add("ok"); }
+    if(fired.has("normal") && bypassSeen) api.complete();
+  }
+  const pl = root.querySelector("#pl");
+  PAYLOADS.forEach(p => { const b = el(`<button class="payload"><b>${p.label}</b><br><code>${esc(p.val)}</code></button>`); b.addEventListener("click", () => { pl.querySelectorAll(".payload").forEach(x=>x.classList.remove("on")); b.classList.add("on"); render(p.val, p.kind); }); pl.appendChild(b); });
+  render("hiba", "normal"); pl.firstChild.classList.add("on");
+}
+
+function act_injectTypes(root, api){
+  const UB="UNION-based", EB="Error-based", BL="Blind (boolean)", TB="Time-based blind", PG="Piggy-backed query";
+  choiceQuiz(root, {
+    shuffle:true,
+    hint:"UNION adds rows from other tables. Error-based reads leaked error messages. Blind asks true/false questions. Time-based watches for delays. Piggy-backed tacks on a second statement.",
+    items:[
+      {q:"The attacker appends <code>UNION SELECT card_no FROM payments</code> to pull data from another table into the results.", a:UB, opts:[UB,EB,BL,TB], why:"UNION-based injection merges results from a second query."},
+      {q:"The attacker forces the database to reveal table names inside its <b>error messages</b>.", a:EB, opts:[EB,UB,TB,PG], why:"Error-based injection reads information leaked in error text."},
+      {q:"The page shows no data, so the attacker asks true/false questions like <code>AND 1=1</code> vs <code>AND 1=2</code> and watches whether the page changes.", a:BL, opts:[BL,UB,PG,EB], why:"Blind injection infers data one yes/no answer at a time."},
+      {q:"With no visible output at all, the attacker injects <code>IF(…, SLEEP(5), 0)</code> and measures how long the response takes.", a:TB, opts:[TB,BL,UB,EB], why:"Time-based blind injection uses deliberate delays as the signal."},
+      {q:"The attacker adds a semicolon and a whole second command: <code>; DROP TABLE users</code>.", a:PG, opts:[PG,UB,EB,BL], why:"Piggy-backed (stacked) queries run an extra statement after the original."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function act_injectGoals(root, api){
+  sortGame(root, {
+    buckets:[
+      {id:"c", e:"🙈", label:"Steal data (confidentiality)", sub:"read what you shouldn’t"},
+      {id:"i", e:"✏️", label:"Change data (integrity)", sub:"alter or destroy records"},
+      {id:"b", e:"🚪", label:"Bypass control (authentication)", sub:"get in or gain power"}
+    ],
+    tips:{ c:"This goal is about reading secret data.", i:"This goal is about modifying or deleting data.", b:"This goal is about logging in or escalating privileges." },
+    items:[
+      {t:"Dump every row of the users table", f:"c"}, {t:"Read other customers’ card numbers", f:"c"}, {t:"Extract password hashes", f:"c"},
+      {t:"Change your own grade to A", f:"i"}, {t:"DROP the whole orders table", f:"i"}, {t:"Insert a fake admin account", f:"i"},
+      {t:"Log in without a valid password", f:"b"}, {t:"Comment out the password check", f:"b"}, {t:"Turn a normal account into an admin", f:"b"}
+    ]
+  }, api.complete);
+}
+
+function act_injectFix(root, api){
+  let safe = false; let qDone = false;
+  root.innerHTML = `<div class="seg" role="group" aria-label="Code version" style="margin-bottom:12px"><button data-v="bad" class="on">❌ Vulnerable code</button><button data-v="good">✅ Parameterized query</button></div>
+    <div class="sqlbox" id="code"></div>
+    <div class="form-mock" style="margin-top:12px"><label>😈 Attacker types this into the username box:</label><div class="mono">admin' OR '1'='1</div></div>
+    <div class="resultgrid" id="out" aria-live="polite"></div>
+    <div class="tasks"><div class="task" id="ts"><span class="tick">✓</span>Switch to the parameterized version and see the attack fail</div></div>
+    <h4 class="part">Which defence is it?</h4><div id="dq"></div>`;
+  const codeEl = root.querySelector("#code"), out = root.querySelector("#out");
+  function render(v){
+    if(v === "bad"){
+      codeEl.innerHTML = `<span class="com">// String is glued together — input becomes part of the SQL</span>\nquery = <span class="str">"SELECT * FROM users WHERE user='"</span> + <span class="inj">input</span> + <span class="str">"'"</span>;`;
+      out.innerHTML = `<div class="sqlbox"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> user='<span class="inj">admin' OR '1'='1</span>'</div><div class="feedback bad">💥 The <code>OR '1'='1</code> became part of the command. Every row is returned: the attacker is in.</div>`;
+    } else {
+      codeEl.innerHTML = `<span class="com">// Input is sent separately as data, never mixed into the SQL</span>\nquery = <span class="str">"SELECT * FROM users WHERE user = ?"</span>;\nstmt.setString(1, <span class="inj">input</span>);`;
+      out.innerHTML = `<div class="sqlbox"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> user = <span class="str">"admin' OR '1'='1"</span>  <span class="com">← treated as one harmless text value</span></div><div class="feedback good">✅ Safe! The database looks for a user literally named <code>admin' OR '1'='1</code>, finds nobody, and the attack fails. The input could never change the query’s structure.</div>`;
+      safe = true; root.querySelector("#ts").classList.add("ok"); if(qDone) api.complete();
+    }
+  }
+  root.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => { root.querySelectorAll(".seg button").forEach(x=>x.classList.remove("on")); b.classList.add("on"); render(b.dataset.v); }));
+  render("bad");
+  const PS="Parameterized queries (prepared statements)", IV="Input validation", LP="Least privilege", ER="Hide detailed errors", WAF="Web application firewall";
+  choiceQuiz(root.querySelector("#dq"), {
+    options:[PS, IV, LP, ER, WAF],
+    hint:"The single most effective fix sends user input as data, separate from the SQL command.",
+    items:[
+      {q:"The app sends SQL with <code>?</code> placeholders and passes the user’s input separately. This is the #1 defence.", a:PS, why:"Prepared statements keep code and data apart, so input can never change the query."},
+      {q:"The sign-up form rejects a roll number that contains symbols like <code>'</code> or <code>;</code>.", a:IV, why:"Input validation (allow-listing what’s expected) is a strong extra layer, but not a replacement for prepared statements."},
+      {q:"The web app connects to the database with an account that can only read two tables, not drop them.", a:LP, why:"Least privilege limits the damage if an injection still gets through."},
+      {q:"The app shows users a generic “Something went wrong” instead of the raw database error.", a:ER, why:"Hiding detailed errors stops error-based injection from leaking table names."},
+      {q:"A filter in front of the website blocks requests that look like known attack patterns.", a:WAF, why:"A web application firewall is a useful outer net, but can be bypassed, so it supports rather than replaces secure code."}
+    ],
+    onDone: () => { qDone = true; if(safe) api.complete(); }
+  });
+}
+
+/* ---------- Lesson 3: access control & encryption ---------- */
+function act_grantRevoke(root, api){
+  const privs = ["SELECT","INSERT","UPDATE","DELETE"];
+  const ROLES = {
+    student:{SELECT:true, INSERT:false, UPDATE:false, DELETE:false},
+    teacher:{SELECT:true, INSERT:true, UPDATE:true, DELETE:false},
+    admin:{SELECT:true, INSERT:true, UPDATE:true, DELETE:true}
+  };
+  const missions = [
+    {t:"🎓 A <b>student</b> account should only read the marks table.", role:"student"},
+    {t:"🧑‍🏫 A <b>teacher</b> should read, add and change marks, but never delete rows.", role:"teacher"},
+    {t:"🛠️ An <b>admin</b> cleanup job needs all four privileges.", role:"admin"}
+  ];
+  let mi = 0; const state = {SELECT:false, INSERT:false, UPDATE:false, DELETE:false};
+  root.innerHTML = `<div class="mission-wrap feedback" id="ms" style="border-left-color:var(--primary);background:var(--primary-soft)"></div>
+    <div class="seg" style="margin:12px 0">${privs.map((p,i)=>`<button data-p="${p}" class="${i?"":""}">${p}</button>`).join("")}</div>
+    <div class="sqlbox" id="cmd"></div>
+    <div class="tasks">${missions.map((m,k)=>`<div class="task" id="gm${k}"><span class="tick">✓</span>Mission ${k+1}: set the ${m.role} privileges</div>`).join("")}</div>
+    <div id="gfb" aria-live="polite"></div>`;
+  const ms = root.querySelector("#ms"), cmd = root.querySelector("#cmd"), fb = root.querySelector("#gfb");
+  function draw(){
+    const on = privs.filter(p => state[p]);
+    const role = mi < missions.length ? missions[mi].role : "role";
+    root.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", state[b.dataset.p]));
+    cmd.innerHTML = on.length
+      ? `<span class="kw">GRANT</span> ${on.join(", ")} <span class="kw">ON</span> marks <span class="kw">TO</span> ${role};`
+      : `<span class="com">-- No privileges selected. (This role could do nothing.)</span>`;
+    ms.innerHTML = mi < missions.length ? `<b>Mission ${mi+1} of 3:</b> ${missions[mi].t}` : `<b>🎉 All three roles configured!</b> Keep experimenting if you like.`;
+  }
+  root.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    state[b.dataset.p] = !state[b.dataset.p];
+    if(mi < missions.length){
+      const want = ROLES[missions[mi].role];
+      if(privs.every(p => state[p] === want[p])){
+        root.querySelector("#gm"+mi).classList.add("ok");
+        const on = privs.filter(p=>state[p]);
+        fb.innerHTML = `<div class="feedback good"><b>✓ Mission ${mi+1} done:</b> <code>GRANT ${on.join(", ")} ON marks TO ${missions[mi].role}</code>. This is least privilege: each role gets only what its job needs.</div>`;
+        mi++;
+        if(mi === missions.length){ api.complete(); } else { privs.forEach(p => state[p] = false); }
+      }
+    }
+    draw();
+  }));
+  draw();
+}
+
+function act_views(root, api){
+  const COLS = ["name","roll_no","cgpa","phone","cnic"];
+  const SENSITIVE = {phone:true, cnic:true};
+  const DATA = [
+    {name:"Hiba Imran", roll_no:"23CS045", cgpa:"3.7", phone:"0300-1234567", cnic:"41101-1234567-8"},
+    {name:"Umair Shaikh", roll_no:"23CS046", cgpa:"3.4", phone:"0301-7654321", cnic:"41102-7654321-2"}
+  ];
+  let shown = {name:true, roll_no:true, cgpa:true, phone:false, cnic:false};
+  let safeSeen = false, qDone = false;
+  root.innerHTML = `<p class="small muted">A <b>view</b> is a saved query that shows some columns and hides others. Toggle which columns a “class rep” role may see.</p>
+    <div class="coltoggles" id="ct"></div>
+    <div class="tablewrap"><table class="viewtable" id="vt"></table></div>
+    <div class="tasks"><div class="task" id="vt1"><span class="tick">✓</span>Hide both sensitive columns (phone and CNIC) from this view</div></div>
+    <h4 class="part">Quick check</h4><div id="vq"></div>`;
+  const ct = root.querySelector("#ct"), vt = root.querySelector("#vt");
+  function draw(){
+    ct.innerHTML = COLS.map(c => `<button class="ctog" data-c="${c}" aria-pressed="${shown[c]}">${shown[c]?"👁️":"🙈"} ${c}${SENSITIVE[c]?" 🔒":""}</button>`).join("");
+    ct.querySelectorAll(".ctog").forEach(b => b.addEventListener("click", () => { shown[b.dataset.c] = !shown[b.dataset.c]; draw(); }));
+    vt.innerHTML = `<thead><tr>${COLS.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>${DATA.map(r=>`<tr>${COLS.map(c=> shown[c] ? `<td>${esc(r[c])}</td>` : `<td class="hidden-col">hidden</td>`).join("")}</tr>`).join("")}</tbody>`;
+    if(!shown.phone && !shown.cnic && !safeSeen){ safeSeen = true; root.querySelector("#vt1").classList.add("ok"); if(qDone) api.complete(); }
+  }
+  draw();
+  choiceQuiz(root.querySelector("#vq"), {
+    items:[{
+      q:"Why is giving the class rep a <b>view</b> better than giving them the whole students table?",
+      opts:["They see only the columns they need, and never the sensitive ones","Views make queries run faster","Views encrypt the database automatically"],
+      a:"They see only the columns they need, and never the sensitive ones",
+      why:"Views enforce least privilege at the column level: sensitive data is simply not exposed.",
+      hint:"Think about which columns the class rep can and cannot see through the view."
+    }],
+    shuffle:true,
+    onDone: () => { qDone = true; if(safeSeen) api.complete(); }
+  });
+}
+
+function act_restVsTransit(root, api){
+  const R = "🛡️ At rest", T = "🚚 In transit";
+  choiceQuiz(root, {
+    options:[R, T],
+    hint:"At rest = stored on a disk, backup or device. In transit = moving across a network between two points.",
+    items:[
+      {q:"The database files saved on the server’s hard drive.", a:R, why:"Stored data sitting on disk is data at rest."},
+      {q:"A query result travelling from the server to a user’s browser.", a:T, why:"Data moving over the network is in transit."},
+      {q:"A nightly backup copied onto an external drive.", a:R, why:"A stored backup is data at rest, and a common theft target."},
+      {q:"Login details sent from a mobile app to the API.", a:T, why:"Data crossing the network between app and server is in transit."},
+      {q:"Records inside a stolen laptop’s local database.", a:R, why:"Data stored on the device is at rest, which is why full-disk encryption matters."},
+      {q:"Data flowing between two microservices over the internal network.", a:T, why:"Service-to-service traffic is still data in transit and should be encrypted (for example with TLS)."}
+    ],
+    onDone: api.complete
+  });
+}
+
+function act_encDemo(root, api){
+  const MAP = {}; const alpha = "abcdefghijklmnopqrstuvwxyz";
+  function enc(txt, key){ // simple Caesar-style demo cipher (teaching only, not real crypto)
+    return txt.replace(/[a-z]/gi, ch => { const low = ch.toLowerCase(); const i = alpha.indexOf(low); if(i<0) return ch; const o = alpha[(i+key)%26]; return ch === low ? o : o.toUpperCase(); })
+      .replace(/[0-9]/g, d => ((+d + key) % 10)); }
+  let encd = false, decd = false, wrongTried = false;
+  root.innerHTML = `<div class="warnline">This is a simplified teaching cipher so you can see the idea. Real databases use strong algorithms like AES.</div>
+    <div class="field" style="max-width:360px"><label for="pt">Plaintext (what’s really stored)</label><input class="input mono" id="pt" value="CNIC: 41101-1234" maxlength="40"></div>
+    <div class="field" style="max-width:200px;margin-top:10px"><label for="k">Secret key (a number 1–9)</label><input class="input mono" id="k" type="number" min="1" max="9" value="3"></div>
+    <div class="enc-grid" style="margin-top:14px">
+      <div class="enc-card"><div class="lab">📄 Plaintext</div><div class="val" id="vP"></div></div>
+      <div class="enc-mid"><div class="lock-ic">🔒</div><div class="small">encrypt →</div></div>
+      <div class="enc-card"><div class="lab">🔐 Ciphertext (stored on disk)</div><div class="val" id="vC"></div></div>
+    </div>
+    <div class="row wrap" style="margin-top:14px"><button class="btn" id="encBtn">🔒 Encrypt &amp; store</button><button class="btn btn-soft" id="decBtn" disabled>🔓 Decrypt with the key</button></div>
+    <div class="field" style="max-width:200px;margin-top:10px"><label for="dk">Decryption key to try</label><input class="input mono" id="dk" type="number" min="1" max="9" value="3"></div>
+    <div id="edout" aria-live="polite"></div>
+    <div class="tasks">
+      <div class="task" id="e1"><span class="tick">✓</span>Encrypt the data and see it turn to ciphertext</div>
+      <div class="task" id="e2"><span class="tick">✓</span>Decrypt it back using the correct key</div>
+    </div>`;
+  const pt = root.querySelector("#pt"), k = root.querySelector("#k"), dk = root.querySelector("#dk");
+  const vP = root.querySelector("#vP"), vC = root.querySelector("#vC"), out = root.querySelector("#edout");
+  let cipher = "";
+  function getKey(el){ let v = parseInt(el.value,10); if(isNaN(v)) v = 1; return Math.min(9, Math.max(1, v)); }
+  function paint(){ vP.textContent = pt.value || "(empty)"; vC.textContent = encd ? cipher : "— locked —"; }
+  paint();
+  function chk(){ if(encd && decd) api.complete(); }
+  root.querySelector("#encBtn").addEventListener("click", () => {
+    cipher = enc(pt.value, getKey(k)); encd = true; paint();
+    root.querySelector("#decBtn").disabled = false; root.querySelector("#e1").classList.add("ok");
+    out.innerHTML = `<div class="feedback good">🔒 Stored as <code>${esc(cipher)}</code>. If an attacker steals the disk now, this scramble is all they get, worthless without the key.</div>`;
+    chk();
+  });
+  root.querySelector("#decBtn").addEventListener("click", () => {
+    const key = getKey(dk), real = getKey(k);
+    const back = enc(cipher, 26 - (key % 26)); // reverse shift for letters
+    if(key === real){
+      decd = true; root.querySelector("#e2").classList.add("ok");
+      out.innerHTML = `<div class="feedback good">🔓 Correct key! Decrypted back to <code>${esc(pt.value)}</code>. ${wrongTried ? "Notice the wrong key gave nonsense; only the right key works." : "The authorised app holds this key, so it can read the data."}</div>`;
+      chk();
+    } else {
+      wrongTried = true;
+      out.innerHTML = `<div class="feedback bad">❌ Wrong key (${key}). You get garbage: <code>${esc(back)}</code>. Without the correct key, the ciphertext stays unreadable. This is why <b>key management</b> matters as much as the encryption itself.</div>`;
+    }
+  });
+  pt.addEventListener("input", () => { encd = false; root.querySelector("#decBtn").disabled = true; paint(); });
+}
+
+function act_defenceDepth(root, api){
+  sortGame(root, {
+    buckets:[
+      {id:"p", e:"🧱", label:"Prevent", sub:"stop it happening"},
+      {id:"d", e:"🔍", label:"Detect", sub:"notice it happening"},
+      {id:"r", e:"🔁", label:"Recover", sub:"bounce back afterwards"}
+    ],
+    tips:{ p:"This stops an attack before it succeeds.", d:"This spots suspicious activity or breaches.", r:"This restores service or data after an incident." },
+    items:[
+      {t:"Parameterized queries", f:"p"}, {t:"Least-privilege database accounts", f:"p"}, {t:"Encryption at rest", f:"p"}, {t:"Input validation", f:"p"},
+      {t:"Database activity monitoring", f:"d"}, {t:"Audit logs of every query", f:"d"}, {t:"Intrusion detection alerts", f:"d"},
+      {t:"Regular off-site backups", f:"r"}, {t:"A tested incident-response plan", f:"r"}, {t:"Point-in-time restore", f:"r"}
+    ]
+  }, api.complete);
+}
+
+/* ---------- Modules ---------- */
+const MODULES = [
+{
+  title:"Why Databases Need Special Protection", icon:"🗄️",
+  blurb:"Why the database is the highest-value target, the CIA goals, and who is responsible for guarding it.",
+  takeaways:[
+    "Databases concentrate huge amounts of sensitive, linked data, which makes them the highest-value target.",
+    "Database security protects confidentiality, integrity and availability (the CIA triad).",
+    "Key parts: the DBMS, SQL, the tables of records, and every connected application.",
+    "Responsibilities are shared between the DBA, the data owner (security) and application users."
+  ],
+  steps:[
+    { title:"Why the database is the prize",
+      concept:`<p>Attackers follow the value, and few places hold more value than the database. It sits at the centre of almost every system, quietly storing the organisation’s most important asset: its <b>data</b>.</p>
+        <p>Several things make a database an unusually attractive and fragile target:</p>
+        <div class="roles">
+          <div class="role"><b>📦 Aggregation</b>Millions of records in one place, so one breach is catastrophic.</div>
+          <div class="role"><b>🧬 Sensitive, linked data</b>Names, CNICs, cards and health data, all connected.</div>
+          <div class="role"><b>🔌 Large attack surface</b>Many apps and users connect to it over the network.</div>
+          <div class="role"><b>⏱️ High availability needs</b>Downtime or tampering causes real harm.</div>
+        </div>
+        <p class="analogy">🏦 <b>Analogy:</b> a bank keeps one well-guarded vault rather than cash in every drawer. The vault is efficient, but it’s also exactly where every thief wants to be.</p>`,
+      key:"Databases concentrate value, so they attract the most determined attackers and deserve special protection.",
+      task:"For each fact, decide whether it raises the value of the target or lowers the risk.",
+      hints:["More data, more connections and more sensitivity all make a juicier target.","Encryption, patching and access control reduce the risk."],
+      activity:act_whyTarget },
+    { title:"The three goals: confidentiality, integrity, availability",
+      concept:`<p>All of security, databases included, aims at three goals, the <b>CIA triad</b>:</p>
+        <div class="roles">
+          <div class="role"><b>🙈 Confidentiality</b>Only authorised people can read the data.</div>
+          <div class="role"><b>✏️ Integrity</b>Data stays accurate and is changed only in allowed ways.</div>
+          <div class="role"><b>🟢 Availability</b>Authorised users can reach the data when they need it.</div>
+        </div>
+        <p>Every database threat attacks at least one of these. Naming the goal that’s broken is the first step to choosing a defence.</p>`,
+      key:"Confidentiality = secret. Integrity = correct. Availability = reachable.",
+      task:"Decide which goal each incident attacks.",
+      hints:["Was data seen (confidentiality), changed (integrity) or made unreachable (availability)?","Ransomware and crashes attack availability; secret edits attack integrity; leaks attack confidentiality."],
+      activity:act_cia },
+    { title:"What a database is made of",
+      concept:`<p>To secure a database you first need to know its parts. A quick tour:</p>
+        <div class="flowline"><div class="fbox"><b>🔌 App</b><span class="small">sends a query</span></div><span class="arr">▶</span>
+        <div class="fbox hi"><b>🗄️ DBMS</b><span class="small">runs SQL</span></div><span class="arr">▶</span>
+        <div class="fbox"><b>📊 Tables</b><span class="small">rows and columns</span></div></div>
+        <p>The <b>DBMS</b> is the software; <b>SQL</b> is the language queries are written in; the <b>tables</b> hold the actual records; and many <b>applications</b> connect in from outside.</p>`,
+      key:"App → DBMS → SQL → tables of records. Most attacks target the records by abusing SQL through an app.",
+      task:"Flip the four cards to learn each part and where its weak spot is.",
+      hints:["Tap a card to flip it; tap again to flip back.","Notice that the data in the tables is almost always the real target."],
+      activity:act_dbComponents },
+    { title:"Mapping threats to goals",
+      concept:`<p>Database threats come in many shapes, from outside hackers to curious insiders to hardware failure. Sorting each one by the goal it breaks keeps your thinking clear.</p>`,
+      key:"Every threat lands on confidentiality, integrity or availability (sometimes more than one).",
+      task:"Sort the ten threats into the goal each one attacks.",
+      hints:["Reading or stealing data = confidentiality. Altering or destroying = integrity.","Taking the database offline = availability."],
+      activity:act_dbThreats },
+    { title:"Who is responsible?",
+      concept:`<p>Protecting a database is a team effort:</p>
+        <div class="roles">
+          <div class="role"><b>🛠️ Database administrator (DBA)</b>Runs and maintains the database: installs, patches, backs up, and implements access rules.</div>
+          <div class="role"><b>👔 Data owner / security</b>Decides policy: who may see what, how data is classified, and signs off access.</div>
+          <div class="role"><b>👩‍🎓 Application and end users</b>Use the data through applications, with only the rights they need.</div>
+        </div>
+        <p>Even automated applications count as “users” of the database, and should run with limited accounts.</p>`,
+      key:"The owner decides the rules, the DBA implements them, and users work within them.",
+      task:"Match each action to the person responsible for it.",
+      hints:["Running and maintaining the database is the DBA. Deciding who may see what is the owner.","Just using the app, or an app making read-only queries, is an end user."],
+      activity:act_dbaRoles }
+  ]
+},
+{
+  title:"SQL Injection: Techniques, Types and Countermeasures", icon:"💉",
+  blurb:"How injection works, the main types, what attackers aim for, and how to stop it for good.",
+  takeaways:[
+    "SQL injection happens when untrusted input is mixed into a SQL command so it changes the command’s meaning.",
+    "Common types: UNION-based, error-based, blind (boolean), time-based blind, and piggy-backed queries.",
+    "Attackers aim to steal data, change or destroy data, or bypass authentication.",
+    "Parameterized queries are the #1 defence, backed by input validation, least privilege, hidden errors and a WAF."
+  ],
+  steps:[
+    { title:"Anatomy of an injection",
+      concept:`<p><b>SQL injection</b> is the most famous database attack. It happens when an application pastes <b>user input</b> straight into a SQL command. A crafted input then stops being data and becomes part of the command.</p>
+        <p>Consider a login that builds this query:</p>
+        <div class="sqlbox"><span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> username = '<span class="inj">[your input]</span>' <span class="kw">AND</span> password = '<span class="str">...</span>';</div>
+        <p>If you type a normal name, all is well. But the attacker’s input can close the quote and add their own logic.</p>`,
+      key:"Injection works when input crosses the line from data into command.",
+      task:"Try each input in the vulnerable login. See a safe query, then break in.",
+      hints:["Start with the normal name to see a safe result.","Then try the OR '1'='1' or the admin' -- payload and watch the whole table leak."],
+      activity:act_injectLogin },
+    { title:"The main types of injection",
+      concept:`<p>Attackers adapt to how much the page shows them. The main families:</p>
+        <div class="roles">
+          <div class="role"><b>🔗 UNION-based</b>Append <code>UNION SELECT</code> to pull data from other tables into the results.</div>
+          <div class="role"><b>⚠️ Error-based</b>Read information the database leaks in its error messages.</div>
+          <div class="role"><b>🎭 Blind (boolean)</b>No data shown, so ask true/false questions and watch the page change.</div>
+          <div class="role"><b>⏱️ Time-based blind</b>Even nothing visible? Inject a delay (<code>SLEEP</code>) and time the response.</div>
+          <div class="role"><b>➕ Piggy-backed</b>Add a semicolon and a second command, such as <code>; DROP TABLE</code>.</div>
+        </div>`,
+      key:"The type depends on how much feedback the attacker can see.",
+      task:"Match each description to the type of SQL injection.",
+      hints:["UNION pulls in extra rows; error-based reads error text.","Blind asks yes/no questions; time-based uses delays; piggy-backed stacks a second statement."],
+      activity:act_injectTypes },
+    { title:"What attackers are after",
+      concept:`<p>Whatever the technique, the <b>goal</b> is usually one of three things. Knowing the goal helps you explain why a particular defence matters.</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">🙈 Steal data</div>Read records they shouldn’t: users, cards, hashes.</div>
+        <div class="mini"><div class="mini-h">✏️ Change data</div>Alter grades, prices, or delete whole tables.</div></div>
+        <div class="mini"><div class="mini-h">🚪 Bypass control</div>Log in without a password, or turn a normal user into an admin.</div>`,
+      key:"Steal, change, or break in: these map onto confidentiality, integrity and authentication.",
+      task:"Sort each attacker goal into steal, change or bypass.",
+      hints:["Reading data is stealing; altering or dropping is changing.","Logging in or escalating privilege is bypassing control."],
+      activity:act_injectGoals },
+    { title:"The fix: parameterized queries",
+      concept:`<p>The root cause of injection is mixing <b>code and data</b>. The cure is to keep them apart with a <b>parameterized query</b> (prepared statement): the SQL is fixed, with <code>?</code> placeholders, and the user’s input is sent separately as pure data.</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">❌ Vulnerable</div><code>"...user='" + input + "'"</code> glues input into the command.</div>
+        <div class="mini"><div class="mini-h">✅ Parameterized</div><code>"...user = ?"</code> then bind <code>input</code> separately.</div></div>
+        <p>Supporting defences add depth: input validation, least-privilege accounts, hidden error messages and a web application firewall.</p>`,
+      key:"Parameterized queries keep user input as data, so it can never change the SQL.",
+      task:"Switch to the parameterized version to see the attack fail, then match each defence.",
+      hints:["Click the “Parameterized query” tab and watch the same payload do nothing.","The single best fix is prepared statements; the others add extra layers."],
+      activity:act_injectFix },
+    { title:"Why input validation alone isn’t enough",
+      concept:`<p>Filtering dangerous characters (“blacklisting”) feels tempting, but attackers are endlessly creative: different encodings, comment tricks and alternative syntax slip past filters. That’s why parameterized queries, which remove the <i>possibility</i> of injection rather than trying to spot every attack, are the foundation.</p>
+        <p>Good practice layers defences: prepared statements first, then <b>allow-list</b> input validation (accept only what’s expected), least privilege, hidden errors and monitoring.</p>`,
+      key:"Blocking “bad” input is a losing race; removing the possibility of injection is the real fix.",
+      task:"Decide which defence each measure represents.",
+      hints:["Prepared statements are the number-one, structural defence.","Validation, least privilege, hidden errors and a WAF are valuable extra layers."],
+      activity:act_injectFix }
+  ]
+},
+{
+  title:"Database Access Control and Encryption", icon:"🔐",
+  blurb:"Granting the right privileges, hiding columns with views, and encrypting data at rest.",
+  takeaways:[
+    "GRANT and REVOKE control which privileges (SELECT, INSERT, UPDATE, DELETE) each role has.",
+    "Views expose only selected columns and rows, enforcing least privilege down to the column.",
+    "Encryption protects data at rest (stored) and in transit (moving across a network).",
+    "Strong security layers prevention, detection and recovery: defence in depth."
+  ],
+  steps:[
+    { title:"Privileges: GRANT and REVOKE",
+      concept:`<p>Databases have their own access control. The DBA uses <b>GRANT</b> to give privileges and <b>REVOKE</b> to take them away. The core privileges on a table are:</p>
+        <div class="roles">
+          <div class="role"><b>SELECT</b>Read rows.</div>
+          <div class="role"><b>INSERT</b>Add new rows.</div>
+          <div class="role"><b>UPDATE</b>Change existing rows.</div>
+          <div class="role"><b>DELETE</b>Remove rows.</div>
+        </div>
+        <p>Following <b>least privilege</b>, each role gets only what its job needs, so a leaked student account can’t delete the marks table.</p>`,
+      key:"GRANT gives rights; REVOKE removes them. Give each role only what it needs.",
+      task:"Set the right privileges for three roles. Watch the GRANT command build itself.",
+      hints:["A student only reads, so SELECT alone.","A teacher reads, adds and changes but doesn’t delete: SELECT, INSERT, UPDATE. An admin gets all four."],
+      activity:act_grantRevoke },
+    { title:"Views: show less, protect more",
+      concept:`<p>Sometimes a user needs <i>some</i> of a table but not the sensitive columns. A <b>view</b> is a saved query that presents only chosen columns and rows. Users are given access to the view, not the underlying table.</p>
+        <div class="analogy">🪟 A view is like a window with a frame: people see only the part you let them see. The full room (the base table) stays out of reach.</div>
+        <p>Views enforce least privilege at the <b>column and row level</b>, and can also combine data without exposing the raw tables.</p>`,
+      key:"A view shows a safe slice of a table, hiding the sensitive parts.",
+      task:"Toggle which columns the class rep may see. Hide the sensitive ones, then answer the question.",
+      hints:["Turn off the columns marked with a 🔒 (phone and CNIC).","A view lets the class rep see names and CGPA without ever seeing CNICs."],
+      activity:act_views },
+    { title:"Data at rest vs data in transit",
+      concept:`<p>Encryption protects data in two different states:</p>
+        <div class="two-col"><div class="mini"><div class="mini-h">🛡️ At rest</div>Data <b>stored</b> on disk, in backups or on a device. Protected by database or disk encryption.</div>
+        <div class="mini"><div class="mini-h">🚚 In transit</div>Data <b>moving</b> across a network between app and server. Protected by TLS (HTTPS).</div></div>
+        <p>You need both. Encrypting the disk doesn’t help if the data travels in the clear, and encrypting the connection doesn’t help if a stolen backup is readable.</p>`,
+      key:"At rest = stored. In transit = moving. Protect both.",
+      task:"Decide whether each example is data at rest or data in transit.",
+      hints:["Stored on a disk, backup or device → at rest.","Travelling over a network between two points → in transit."],
+      activity:act_restVsTransit },
+    { title:"Encryption at rest, hands on",
+      concept:`<p>Encryption turns readable <b>plaintext</b> into scrambled <b>ciphertext</b> using a secret <b>key</b>. Only someone with the key can turn it back. If an attacker steals the encrypted database files, they get meaningless scramble.</p>
+        <p>The flip side: whoever holds the key holds the data, so <b>key management</b> (storing keys safely, separate from the data) is as important as the encryption itself.</p>`,
+      key:"Ciphertext is useless without the key, which is why protecting the key is critical.",
+      task:"Encrypt some sample data, then try to decrypt it with the right and wrong keys.",
+      hints:["Press “Encrypt & store”, then “Decrypt with the key”.","Change the decryption key to a wrong number and see that you get nonsense."],
+      activity:act_encDemo },
+    { title:"Defence in depth",
+      concept:`<p>No single control is enough. Strong database security stacks measures in three layers so that if one fails, others still protect you:</p>
+        <div class="roles">
+          <div class="role"><b>🧱 Prevent</b>Stop attacks: parameterized queries, least privilege, encryption, validation.</div>
+          <div class="role"><b>🔍 Detect</b>Notice problems: activity monitoring, audit logs, intrusion detection.</div>
+          <div class="role"><b>🔁 Recover</b>Bounce back: backups, incident response, point-in-time restore.</div>
+        </div>`,
+      key:"Prevent, detect, recover: layers that back each other up.",
+      task:"Sort each security measure into prevent, detect or recover.",
+      hints:["If it stops the attack happening, it’s prevent.","If it spots the attack, it’s detect. If it restores things afterward, it’s recover."],
+      activity:act_defenceDepth }
+  ]
+}
+];
+
+/* ---------- Quiz ---------- */
+const QUIZ = [
+  {topic:"Lesson 1", q:"Why are databases considered an especially high-value target?", o:["They concentrate large amounts of sensitive, linked data in one place","They are never connected to a network","They store only public information","They cannot be backed up"], a:0, ex:"Aggregation means one breach can expose huge amounts of sensitive data at once."},
+  {topic:"Lesson 1", q:"A hacker secretly changes a student’s grade. Which security goal is attacked?", o:["Confidentiality","Integrity","Availability","Authentication"], a:1, ex:"Altering data without authorization breaks integrity: the data is no longer trustworthy."},
+  {topic:"Lesson 1", q:"Ransomware encrypts a hospital’s database so staff can’t open any records. This attacks…", o:["Confidentiality","Integrity","Availability","None of these"], a:2, ex:"The data is unreachable when needed, which is an availability failure."},
+  {topic:"Lesson 1", q:"Which software actually stores the data and executes SQL queries?", o:["The web browser","The DBMS","The firewall","The operating system’s clock"], a:1, ex:"The database management system (DBMS) stores data and runs queries."},
+  {topic:"Lesson 1", q:"Deciding which staff may view salary data and signing off the policy is the role of the…", o:["Data owner / security","Database administrator","End user","Network cable"], a:0, ex:"The data owner sets policy; the DBA implements it technically."},
+  {topic:"Lesson 2", q:"SQL injection becomes possible when…", o:["Untrusted user input is mixed into a SQL command","The database is turned off","Passwords are too long","Backups are encrypted"], a:0, ex:"Injection happens when input crosses from data into the command itself."},
+  {topic:"Lesson 2", q:"The input <code>' OR '1'='1</code> in a login form is an example of…", o:["Input validation","A tautology that makes the WHERE clause always true","A strong password","A backup command"], a:1, ex:"Because 1=1 is always true, the WHERE clause matches every row, bypassing the password."},
+  {topic:"Lesson 2", q:"Injecting <code>UNION SELECT card_no FROM payments</code> is which type?", o:["Time-based blind","UNION-based injection","Piggy-backed query","Error-based"], a:1, ex:"UNION-based injection merges data from another table into the results."},
+  {topic:"Lesson 2", q:"An attacker injects <code>IF(…, SLEEP(5), 0)</code> and measures the delay. This is…", o:["UNION-based injection","Error-based injection","Time-based blind injection","Input validation"], a:2, ex:"When nothing is visible, a deliberate time delay becomes the signal: time-based blind injection."},
+  {topic:"Lesson 2", q:"What is the single most effective defence against SQL injection?", o:["Parameterized queries (prepared statements)","Making passwords longer","Hiding the login page","Rebooting the server daily"], a:0, ex:"Prepared statements keep input as data, so it can never change the query’s structure."},
+  {topic:"Lesson 2", q:"Why is blocking “bad” characters (blacklisting) not a reliable defence?", o:["Attackers find encodings and tricks that slip past filters","It uses too much memory","It makes the site load slowly","It deletes the database"], a:0, ex:"Blacklists can’t anticipate every trick; removing the possibility of injection is safer."},
+  {topic:"Lesson 3", q:"Which SQL command gives a role permission to read a table?", o:["GRANT SELECT","DROP TABLE","REVOKE ALL","SLEEP"], a:0, ex:"GRANT SELECT lets the role read rows; REVOKE removes privileges."},
+  {topic:"Lesson 3", q:"A database view is mainly used to…", o:["Speed up the internet","Show only selected columns and rows, hiding sensitive data","Encrypt passwords automatically","Delete old backups"], a:1, ex:"Views enforce least privilege by exposing only a safe slice of a table."},
+  {topic:"Lesson 3", q:"A nightly backup stored on an external drive is an example of data…", o:["At rest","In transit","In the browser","That cannot be encrypted"], a:0, ex:"Stored data, including backups, is data at rest and should be encrypted."},
+  {topic:"Lesson 3", q:"In defence in depth, audit logs and activity monitoring belong to which layer?", o:["Prevent","Detect","Recover","Encrypt"], a:1, ex:"Monitoring and logging help you detect attacks; they don’t prevent or recover by themselves."}
+];
+function gradeOf(sc){ if(sc>=13) return {g:"A", t:"Excellent"}; if(sc>=11) return {g:"B", t:"Very good"}; if(sc>=9) return {g:"C", t:"Pass"}; return {g:"–", t:"Needs revision"}; }
+
+/* ---------- Top bar & nav ---------- */
+function renderTop(){
+  if(mode === "welcome" || !S.name){
+    topbar.innerHTML = `<div class="topbar-in"><div class="brand"><span class="brand-ic">🗄️</span><span class="brand-t">Activity Lab<small>Database Security</small></span></div></div>`; return;
+  }
+  const n = doneCount(), inQuiz = mode === "quiz";
+  const initials = S.name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  topbar.innerHTML = `<div class="topbar-in">
+    <button class="brand" id="tbHome" ${inQuiz?"disabled":""} aria-label="Go to the learning map"><span class="brand-ic">🗄️</span><span class="brand-t">Activity Lab<small>Database Security</small></span></button>
+    <div class="tb-right">
+      <div class="tb-prog" title="Activities completed"><span>${n} of ${TOTAL} activities</span><div class="progress"><i style="width:${n/TOTAL*100}%"></i></div></div>
+      <div class="student"><span class="avatar">${esc(initials)}</span><span><b>${esc(S.name)}</b><small>Roll no. ${esc(S.roll)}</small></span></div>
+      ${inQuiz ? `<span class="pill warn">Quiz in progress</span>` : `<button class="btn btn-ghost btn-sm" id="tbMap">🗺️ Map</button>`}
+    </div></div>`;
+  const home = document.getElementById("tbHome"), map = document.getElementById("tbMap");
+  if(home && !inQuiz) home.addEventListener("click", () => go(screenOverview));
+  if(map) map.addEventListener("click", () => go(screenOverview));
+}
+function go(fn, ...args){ fn(...args); renderTop(); try{ window.scrollTo(0,0); }catch(e){} }
+
+/* ---------- Screens ---------- */
+function screenWelcome(){
+  mode = "welcome";
+  const has = !!S.name;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card"><div class="hero-grid">
+      <div>
+        <span class="tag">🎯 Interactive activity for beginners</span>
+        <h1 style="margin-top:14px">Database Security</h1>
+        <p class="lead">Why databases are the highest-value target, the anatomy of SQL injection and its defences, and how access control and encryption protect data at rest.</p>
+        <ul class="hero-facts"><li>📚 3 lessons, 15 hands-on activities</li><li>💡 Free hints at every step</li><li>📝 Final quiz worth 15 marks</li><li>🧪 Safe, simulated attacks</li></ul>
+      </div>
+      <div class="vault" aria-hidden="true">
+        <div class="vault-h"><span>🗄️ students</span><span class="dot"></span></div>
+        <div class="vrow"><span>name</span><span>Hiba Imran</span></div>
+        <div class="vrow"><span>cgpa</span><span>3.7</span></div>
+        <div class="vrow"><span>cnic</span><span class="masked">🔒 encrypted</span></div>
+        <div class="vrow"><span>phone</span><span class="masked">🔒 encrypted</span></div>
+        <div class="vault-tag">🛡️ Access-controlled · encrypted at rest</div>
+      </div>
+    </div></div>
+    <div class="card" id="who"></div>
+  </section>`;
+  const who = document.getElementById("who");
+  if(has){
+    who.innerHTML = `<h3>Welcome back, ${esc(S.name)}!</h3>
+      <p>Roll no. <b>${esc(S.roll)}</b>. You’ve completed <b>${doneCount()} of ${TOTAL}</b> activities${S.results.length ? ` and taken the quiz ${S.results.length} time${S.results.length>1?"s":""}` : ""}.</p>
+      <div class="row wrap"><button class="btn" id="cont">Continue where I left off</button><button class="btn btn-ghost" id="newst">I’m a different student</button></div>`;
+    document.getElementById("cont").addEventListener("click", () => go(screenOverview));
+    document.getElementById("newst").addEventListener("click", () => { S = fresh(); save(); go(screenWelcome); });
+  } else {
+    who.innerHTML = `<h3>Before you begin</h3><p class="muted">Your name and roll number will appear on your result card at the end.</p>
+      <div class="who-grid">
+        <div class="field"><label for="nm">Full name</label><input class="input" id="nm" maxlength="60" autocomplete="name" placeholder="e.g. Umair Shaikh"></div>
+        <div class="field"><label for="rl">Roll number</label><input class="input" id="rl" maxlength="30" autocomplete="off" placeholder="e.g. 23CS046"></div>
+        <button class="btn" id="startBtn">Start the activity</button>
+      </div><div class="err" id="err" aria-live="polite"></div>`;
+    const nm = document.getElementById("nm"), rl = document.getElementById("rl"), err = document.getElementById("err");
+    function start(){
+      const n = nm.value.trim().replace(/\s+/g," "), r = rl.value.trim();
+      if(n.length < 2){ err.textContent = "Enter your full name (at least 2 letters)."; nm.focus(); return; }
+      if(r.length < 2){ err.textContent = "Enter your roll number."; rl.focus(); return; }
+      if(!/^[A-Za-z0-9\-\/_. ]+$/.test(r)){ err.textContent = "Roll numbers can use letters, numbers, dashes, slashes and dots only."; rl.focus(); return; }
+      S = fresh(); S.name = n; S.roll = r; save(); go(screenOverview);
+    }
+    document.getElementById("startBtn").addEventListener("click", start);
+    [nm, rl].forEach(x => x.addEventListener("keydown", e => { if(e.key === "Enter") start(); }));
+    nm.focus();
+  }
+}
+
+function modInfo(m){
+  const cnt = [0,1,2,3,4].filter(i => S.done[m*5+i]).length;
+  const unlocked = m === 0 || S.maxPos >= m*5 - 1;
+  const started = S.maxPos >= m*5;
+  let target = m*5; for(let i=0;i<5;i++){ if(!S.done[m*5+i]){ target = m*5+i; break; } }
+  if(target > S.maxPos + 1) target = Math.max(m*5, Math.min(S.maxPos, m*5+4));
+  return {cnt, unlocked, started, target};
+}
+
+function screenOverview(){
+  mode = "map";
+  const first = S.name.split(" ")[0], quizOpen = S.maxPos >= 14, res = S.results;
+  const best = res.length ? Math.max(...res.map(r=>r.score)) : null;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card">
+      <span class="tag">👋 Hello, ${esc(first)}</span>
+      <h2 style="margin-top:12px">What this activity is about</h2>
+      <p>Behind almost every app you use sits a <b>database</b>: the university portal, your bank, your hospital records. It holds the most valuable thing an organisation owns, which is exactly why attackers go after it. Learn to defend it and you’ve protected the heart of the system.</p>
+      <p>In this activity you’ll safely break into a simulated login with SQL injection, then shut that door with a parameterized query. You’ll grant database privileges, hide sensitive columns with a view, and watch encryption turn readable data into useless scramble. Every button gives instant feedback, and hints are always free. <b>Everything here is simulated. Nothing touches a real database.</b></p>
+    </div>
+    <div class="card">
+      <h3>By the end, you will be able to:</h3>
+      <ol class="objectives">
+        <li>Explain why databases are such high-value targets.</li>
+        <li>Map database threats onto confidentiality, integrity and availability.</li>
+        <li>Name the parts of a database and who is responsible for protecting it.</li>
+        <li>Describe how SQL injection works, and recognise its main types.</li>
+        <li>Identify what attackers aim to achieve with injection.</li>
+        <li>Explain why parameterized queries are the primary defence.</li>
+        <li>Use GRANT and REVOKE to apply least privilege.</li>
+        <li>Use views to hide sensitive columns.</li>
+        <li>Tell data at rest from data in transit, and explain encryption and key management.</li>
+        <li>Describe defence in depth: prevent, detect and recover.</li>
+      </ol>
+    </div>
+    <div class="card"><h3>Your learning path</h3><p class="muted small">Lessons unlock one after another. You can return to any finished lesson.</p><div class="journey" id="journey"></div></div>
+    <div class="card">
+      <h3>How you’ll be marked</h3>
+      <div class="tablewrap"><table class="marks">
+        <thead><tr><th>Part</th><th>What it is</th><th>Marks</th></tr></thead>
+        <tbody>
+          <tr><td>Activities</td><td>15 hands-on activities across 3 lessons</td><td>Not graded; your completion count appears on your result card</td></tr>
+          <tr><td>Final quiz</td><td>15 multiple-choice questions, 1 mark each</td><td><b>15 marks</b></td></tr>
+          <tr><td>Pass mark</td><td>9 out of 15 (60%)</td><td>–</td></tr>
+          <tr><td>Grades</td><td>13–15 Excellent (A), 11–12 Very good (B), 9–10 Pass (C), 0–8 Needs revision</td><td>–</td></tr>
+        </tbody></table></div>
+      <p class="small muted" style="margin-top:10px">The quiz unlocks when you reach the end of Lesson 3. Questions appear in a random order, there are no hints, and each answer is locked once you submit it. Every attempt is numbered on your result card.</p>
+    </div>
+    <div class="card">
+      <h3>How each step works</h3>
+      <div class="howto">
+        <div><span class="ic">📖</span><b>Learn</b><br><span class="small">Read a short explanation with a real example.</span></div>
+        <div><span class="ic">🎯</span><b>Try it</b><br><span class="small">Do the activity: inject, grant, toggle or encrypt.</span></div>
+        <div><span class="ic">💡</span><b>Use hints</b><br><span class="small">Stuck? Hints are free and come one at a time.</span></div>
+        <div><span class="ic">✅</span><b>Get feedback</b><br><span class="small">Every answer tells you why it’s right or wrong.</span></div>
+      </div>
+    </div>
+  </section>`;
+  const j = document.getElementById("journey");
+  MODULES.forEach((mod, m) => {
+    const info = modInfo(m);
+    const label = !info.unlocked ? "🔒 Locked" : info.cnt === 5 ? "Review" : info.started ? "Continue" : "Start";
+    const card = el(`<div class="jcard ${info.unlocked?"":"locked"}"><div class="jnum">${m+1}</div>
+      <div><div class="jtitle">${mod.icon} ${mod.title}</div><div class="small muted">${mod.blurb}</div>
+        <div class="jmeta"><span class="pill">5 activities</span><span class="pill">About 12 minutes</span><span class="pill">${info.cnt} of 5 done</span></div>
+        <div class="progress"><i style="width:${info.cnt*20}%"></i></div>
+        ${info.unlocked ? "" : `<div class="small muted" style="margin-top:6px">Reach the end of Lesson ${m} to unlock.</div>`}</div>
+      <button class="btn ${info.cnt===5?"btn-ghost":""} btn-sm" ${info.unlocked?"":"disabled"}>${label}</button></div>`);
+    card.querySelector("button").addEventListener("click", () => go(screenStep, info.target));
+    j.appendChild(card);
+  });
+  const qc = el(`<div class="jcard quiz ${quizOpen?"":"locked"}"><div class="jnum">📝</div>
+    <div><div class="jtitle">Final quiz</div><div class="small muted">15 questions covering all three lessons, 1 mark each.</div>
+      <div class="jmeta"><span class="pill">15 marks</span><span class="pill">Pass: 9</span>${res.length ? `<span class="pill">First attempt: ${res[0].score}/15</span><span class="pill">Best: ${best}/15</span>` : ""}</div>
+      ${quizOpen ? "" : `<div class="small muted">Reach the end of Lesson 3 to unlock.</div>`}</div>
+    <button class="btn btn-sm" ${quizOpen?"":"disabled"}>${quizOpen ? (res.length ? "Retake quiz" : "Take the quiz") : "🔒 Locked"}</button></div>`);
+  qc.querySelector("button").addEventListener("click", () => go(screenQuizIntro));
+  j.appendChild(qc);
+}
+
+function screenStep(pos){
+  mode = "step";
+  const m = Math.floor(pos/5), s = pos % 5, mod = MODULES[m], st = mod.steps[s];
+  if(pos > S.maxPos){ S.maxPos = pos; save(); }
+  const done = !!S.done[pos];
+  const nextLabel = d => d ? (s < 4 ? "Continue" : "Finish lesson") : "Skip for now";
+  app.innerHTML = `<section class="screen stack">
+    <div class="card">
+      <div class="crumbs"><span class="pill">${mod.icon} Lesson ${m+1}</span><span>${mod.title}</span></div>
+      <div class="step-title"><h2>${st.title}</h2><span class="muted">Step ${s+1} of 5</span></div>
+      <div class="progress"><i style="width:${(s+1)/5*100}%"></i></div>
+    </div>
+    <div class="card"><div class="sec-tag">📖 Learn</div>${st.concept}<div class="key">🔑 <b>Key idea:</b> ${st.key}</div></div>
+    <div class="card activity ${done?"is-done":""}" id="act">
+      <div class="act-head"><div class="sec-tag">🎯 Activity</div><span class="done-badge">✓ Completed</span></div>
+      <p class="task-text">${st.task}</p>
+      <div id="actBody"></div>
+      <div class="hint-area"><button class="btn btn-sm hint-btn" id="hintBtn">💡 Show a hint</button><div id="hints"></div></div>
+    </div>
+    <div class="card stepnav">
+      <button class="btn btn-ghost" id="back">◀ Back</button>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <button class="btn ${done?"":"btn-skip"}" id="next">${nextLabel(done)} ▶</button>
+    </div>
+  </section>`;
+  const act = document.getElementById("act"), nextBtn = document.getElementById("next");
+  function drawDots(){ document.getElementById("dots").innerHTML = [0,1,2,3,4].map(i => `<i class="${i===s?"on":""} ${S.done[m*5+i]?"ok":""}"></i>`).join(""); }
+  drawDots();
+  const api = { complete(){
+    if(!S.done[pos]){ S.done[pos] = true; save(); }
+    act.classList.add("is-done"); nextBtn.classList.remove("btn-skip"); nextBtn.innerHTML = nextLabel(true) + " ▶";
+    drawDots(); renderTop();
+  }};
+  let hi = 0; const hb = document.getElementById("hintBtn"), hbox = document.getElementById("hints");
+  hb.addEventListener("click", () => {
+    if(hi >= st.hints.length) return;
+    hbox.appendChild(el(`<div class="hintbox"><b>Hint ${hi+1} of ${st.hints.length}:</b> ${st.hints[hi]}</div>`)); hi++;
+    if(hi >= st.hints.length){ hb.disabled = true; hb.textContent = "No more hints"; } else hb.textContent = "💡 Show another hint";
+  });
+  try{ st.activity(document.getElementById("actBody"), api); }catch(e){ console.error(e); }
+  document.getElementById("back").addEventListener("click", () => go(s > 0 ? () => screenStep(pos-1) : screenOverview));
+  nextBtn.addEventListener("click", () => go(s < 4 ? () => screenStep(pos+1) : () => screenModuleDone(m)));
+}
+
+function screenModuleDone(m){
+  mode = "done";
+  const mod = MODULES[m], cnt = [0,1,2,3,4].filter(i => S.done[m*5+i]).length;
+  app.innerHTML = `<section class="screen card done-card">
+    <div class="medal">${cnt === 5 ? "🏅" : "🎓"}</div>
+    <h2 style="margin-top:10px">Lesson ${m+1} complete!</h2>
+    <p class="lead">${mod.title}</p>
+    <span class="pill">${cnt} of 5 activities completed</span>
+    <div class="takeaways"><h3>What you learned</h3><ul>${mod.takeaways.map(t=>`<li>${t}</li>`).join("")}</ul></div>
+    ${cnt < 5 ? `<p class="muted">You skipped ${5-cnt} ${5-cnt===1?"activity":"activities"}. You can go back to them any time from the map.</p>` : ""}
+    <div class="row wrap center"><button class="btn btn-ghost" id="toMap">🗺️ Back to map</button><button class="btn" id="nextMod">${m < 2 ? `Start Lesson ${m+2}` : "Go to the final quiz"} ▶</button></div>
+  </section>`;
+  if(cnt === 5) confetti();
+  document.getElementById("toMap").addEventListener("click", () => go(screenOverview));
+  document.getElementById("nextMod").addEventListener("click", () => go(m < 2 ? () => screenStep((m+1)*5) : screenQuizIntro));
+}
+
+let Q = null;
+function screenQuizIntro(){
+  mode = "map";
+  const n = doneCount();
+  app.innerHTML = `<section class="screen card">
+    <span class="tag">📝 Final quiz</span>
+    <h2 style="margin-top:12px">Ready to test yourself, ${esc(S.name.split(" ")[0])}?</h2>
+    <div class="tablewrap" style="margin:14px 0"><table class="marks"><tbody>
+      <tr><th>Questions</th><td>15 multiple-choice questions from all three lessons</td></tr>
+      <tr><th>Marks</th><td>1 mark per correct answer, <b>15 marks</b> in total</td></tr>
+      <tr><th>Pass mark</th><td>9 out of 15 (60%)</td></tr>
+      <tr><th>Rules</th><td>No hints. Questions are shuffled. Once you submit an answer it is locked, and you’ll see the explanation straight away.</td></tr>
+      <tr><th>This attempt</th><td>Attempt number ${S.results.length + 1}${S.results.length ? `. Your first attempt scored ${S.results[0].score}/15` : ""}</td></tr>
+    </tbody></table></div>
+    ${n < TOTAL ? `<div class="feedback">You’ve completed ${n} of ${TOTAL} activities. You can still take the quiz, but finishing the activities first will help.</div>` : `<div class="feedback good">You completed all 15 activities. Great preparation!</div>`}
+    <div class="row wrap" style="margin-top:16px"><button class="btn btn-ghost" id="qback">🗺️ Back to map</button><button class="btn" id="qgo">Start the quiz ▶</button></div>
+  </section>`;
+  document.getElementById("qback").addEventListener("click", () => go(screenOverview));
+  document.getElementById("qgo").addEventListener("click", () => { Q = { qs: shuffle(QUIZ).map(q => Object.assign({}, q, {order: shuffle([0,1,2,3])})), i:0, score:0, answers:[], start:Date.now() }; go(screenQuestion); });
+}
+
+function screenQuestion(){
+  mode = "quiz";
+  const q = Q.qs[Q.i]; let sel = null, locked = false;
+  app.innerHTML = `<section class="screen card">
+    <div class="row between wrap"><span class="pill">Question ${Q.i+1} of ${Q.qs.length}</span><span class="pill">Score so far: ${Q.score}</span></div>
+    <div class="progress" style="margin-top:12px"><i style="width:${Q.i/Q.qs.length*100}%"></i></div>
+    <p class="small muted" style="margin:14px 0 0">${q.topic}</p>
+    <h3 class="qprompt">${q.q}</h3>
+    <div class="qopts">${q.order.map((oi,k) => `<button class="qopt" data-oi="${oi}"><span class="letter">${"ABCD"[k]}</span><span>${q.o[oi]}</span></button>`).join("")}</div>
+    <div id="qfb" aria-live="polite"></div>
+    <div class="row end" style="margin-top:16px"><button class="btn" id="qsub" disabled>Submit answer</button></div>
+  </section>`;
+  const sub = document.getElementById("qsub"), btns = app.querySelectorAll(".qopt");
+  btns.forEach(b => b.addEventListener("click", () => { if(locked) return; btns.forEach(x => x.classList.remove("sel")); b.classList.add("sel"); sel = +b.dataset.oi; sub.disabled = false; }));
+  sub.addEventListener("click", () => {
+    if(!locked){
+      if(sel === null) return;
+      locked = true; const ok = sel === q.a; if(ok) Q.score++;
+      Q.answers.push({q:q.q, chosen:q.o[sel], correct:q.o[q.a], ok, ex:q.ex});
+      btns.forEach(x => { x.disabled = true; const oi = +x.dataset.oi; if(oi === q.a) x.classList.add("right"); else if(oi === sel) x.classList.add("wrong"); x.classList.remove("sel"); });
+      document.getElementById("qfb").innerHTML = `<div class="feedback ${ok?"good":"bad"}"><b>${ok ? "✅ Correct! +1 mark." : "❌ Not this time."}</b> ${q.ex}</div>`;
+      sub.textContent = Q.i + 1 < Q.qs.length ? "Next question ▶" : "See my result 🎉";
+    } else if(Q.i + 1 < Q.qs.length){ Q.i++; go(screenQuestion); }
+    else finishQuiz();
+  });
+}
+
+function finishQuiz(){
+  const r = { score:Q.score, total:15, pct:Math.round(Q.score/15*100), ms:Date.now()-Q.start, date:new Date().toISOString(), attempt:S.results.length+1, activities:doneCount() };
+  S.results.push(r); save(); go(screenResult, r, Q.answers);
+}
+
+function screenResult(r, answers){
+  mode = "result";
+  const g = gradeOf(r.score), pass = r.score >= 9;
+  const mins = Math.floor(r.ms/60000), secs = Math.round((r.ms%60000)/1000), when = new Date(r.date).toLocaleString();
+  const text = `Database Security – Activity Result
+Name: ${S.name}
+Roll no.: ${S.roll}
+Quiz score: ${r.score}/15 (${r.pct}%)
+Grade: ${g.g} (${g.t}) – ${pass ? "PASS" : "Needs revision"}
+Activities completed: ${r.activities}/15
+Attempt: ${r.attempt}
+Time taken: ${mins} min ${secs} s
+Date: ${when}`;
+  app.innerHTML = `<section class="screen stack">
+    <div class="card cert">
+      <div class="row between wrap"><span class="tag">🏆 Result card</span><span class="pill">Attempt ${r.attempt}</span></div>
+      <h2 style="margin-top:12px">Database Security: activity result</h2>
+      <div class="result-grid">
+        <div class="ring" style="--p:${r.pct}"><div><div><b>${r.score}</b><span>out of 15</span></div></div></div>
+        <div class="kv">
+          <div><small>Student</small><b>${esc(S.name)}</b></div>
+          <div><small>Roll no.</small><b>${esc(S.roll)}</b></div>
+          <div><small>Percentage</small><b>${r.pct}%</b></div>
+          <div><small>Grade</small><b>${g.g} (${g.t})</b></div>
+          <div><small>Status</small><b class="${pass?"status-pass":"status-fail"}">${pass ? "✅ Pass" : "📚 Needs revision"}</b></div>
+          <div><small>Activities completed</small><b>${r.activities} of 15</b></div>
+          <div><small>Time taken</small><b>${mins} min ${secs} s</b></div>
+          <div><small>Date and time</small><b>${esc(when)}</b></div>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:14px">📸 If your teacher asks for proof, take a screenshot of this card or copy the result text.</p>
+      <div class="row wrap"><button class="btn" id="copy">📋 Copy result text</button><button class="btn btn-ghost" id="retake">🔁 Retake quiz</button><button class="btn btn-ghost" id="rmap">🗺️ Back to map</button></div>
+      <div id="copyArea"></div>
+    </div>
+    <div class="card"><h3>Review your answers</h3>
+      <ol class="review">${answers.map(a => `<li><b>${a.q}</b><br><span class="${a.ok?"yes":"no"}">${a.ok ? "✓" : "✗"} Your answer: ${a.chosen}</span>${a.ok ? "" : `<br><span class="yes">✓ Correct answer: ${a.correct}</span>`}<div class="small muted" style="margin-top:4px">${a.ex}</div></li>`).join("")}</ol>
+    </div>
+  </section>`;
+  if(pass) confetti();
+  const copyBtn = document.getElementById("copy");
+  copyBtn.addEventListener("click", () => {
+    const fallback = () => {
+      const ca = document.getElementById("copyArea");
+      ca.innerHTML = `<p class="small muted" style="margin-top:12px">Copying isn’t allowed here, so select the text below and copy it yourself.</p><textarea class="copybox" readonly></textarea>`;
+      const ta = ca.querySelector("textarea"); ta.value = text; ta.focus(); ta.select();
+    };
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => { copyBtn.textContent = "✓ Copied"; setTimeout(() => copyBtn.textContent = "📋 Copy result text", 2000); }).catch(fallback);
+      else fallback();
+    }catch(e){ fallback(); }
+  });
+  document.getElementById("retake").addEventListener("click", () => go(screenQuizIntro));
+  document.getElementById("rmap").addEventListener("click", () => go(screenOverview));
+}
+
+load();
+go(screenWelcome);
+})();
+</script>
+</body>
+</html>
